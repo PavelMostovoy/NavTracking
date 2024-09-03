@@ -12,14 +12,21 @@ def main(page: ft.Page):
             f"Name: {e.name} - coordinates: {e.coordinates} - Local: ({e.local_x}, {e.local_y}) - Global: ({e.global_x}, {e.global_y})"
         )
         if e.name == "tap":
-            marker_layer_ref.current.markers.append(
-                map.Marker(
-                    content=ft.Icon(
-                        ft.icons.LOCATION_ON, color=ft.cupertino_colors.DESTRUCTIVE_RED
-                    ),
-                    coordinates=e.coordinates,
+            aprox_lat = round(e.coordinates.latitude)
+            aprox_lon = round(e.coordinates.longitude)
+            for i, marker in enumerate(marker_layer_ref.current.markers):
+                if round(marker.coordinates.longitude) == aprox_lon and  round(marker.coordinates.latitude) == aprox_lat:
+                    marker_layer_ref.current.markers.pop(i)
+                    break
+            else:
+                marker_layer_ref.current.markers.append(
+                    map.Marker(
+                        content=ft.Icon(
+                            ft.icons.LOCATION_ON, color=ft.cupertino_colors.DESTRUCTIVE_RED
+                        ),
+                        coordinates=e.coordinates,
+                    )
                 )
-            )
         elif e.name == "secondary_tap":
             circle_layer_ref.current.circles.append(
                 map.CircleMarker(
@@ -38,7 +45,7 @@ def main(page: ft.Page):
         )
 
     page.add(
-        ft.Text("Click anywhere to add a Marker, right-click to add a CircleMarker."),
+        ft.Text("Header record : Click anywhere to add a Marker, right-click to add a CircleMarker."),
         map.Map(
             expand=True,
             configuration=map.MapConfiguration(
