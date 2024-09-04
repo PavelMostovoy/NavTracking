@@ -1,7 +1,19 @@
 import random
 import flet as ft
 import flet.map as map
+import yaml
 
+with open("parsed.yaml", "r+") as file:
+    my_markers_dict = yaml.safe_load(file)
+
+my_markers = []
+my_coord = []
+for coord in my_markers_dict.values():
+    my_markers.append(
+    map.Marker(
+        content=ft.Icon(ft.icons.LOCATION_ON),
+        coordinates=map.MapLatitudeLongitude(coord["lat"], coord["lon"])))
+    my_coord.append(map.MapLatitudeLongitude(coord["lat"], coord["lon"]))
 
 def main(page: ft.Page):
     marker_layer_ref = ft.Ref[map.MarkerLayer]()
@@ -49,7 +61,7 @@ def main(page: ft.Page):
         map.Map(
             expand=True,
             configuration=map.MapConfiguration(
-                initial_center=map.MapLatitudeLongitude(15, 10),
+                initial_center=map.MapLatitudeLongitude(42, 3),
                 initial_zoom=4.2,
                 interaction_configuration=map.MapInteractionConfiguration(
                     flags=map.MapInteractiveFlag.ALL
@@ -84,23 +96,24 @@ def main(page: ft.Page):
                     alignment=ft.alignment.top_right,
                     on_click=lambda e: print("Clicked SimpleAttribution"),
                 ),
-                map.MarkerLayer(
-                    ref=marker_layer_ref,
-                    markers=[
-                        map.Marker(
-                            content=ft.Icon(ft.icons.LOCATION_ON),
-                            coordinates=map.MapLatitudeLongitude(30, 15),
-                        ),
-                        map.Marker(
-                            content=ft.Icon(ft.icons.LOCATION_ON),
-                            coordinates=map.MapLatitudeLongitude(10, 10),
-                        ),
-                        map.Marker(
-                            content=ft.Icon(ft.icons.LOCATION_ON),
-                            coordinates=map.MapLatitudeLongitude(25, 45),
-                        ),
-                    ],
-                ),
+                # map.MarkerLayer(
+                #     ref=marker_layer_ref,
+                #     markers = my_markers,
+                #     # markers=[
+                #     #     map.Marker(
+                #     #         content=ft.Icon(ft.icons.LOCATION_ON),
+                #     #         coordinates=map.MapLatitudeLongitude(30, 15),
+                #     #     ),
+                #     #     map.Marker(
+                #     #         content=ft.Icon(ft.icons.LOCATION_ON),
+                #     #         coordinates=map.MapLatitudeLongitude(10, 10),
+                #     #     ),
+                #     #     map.Marker(
+                #     #         content=ft.Icon(ft.icons.LOCATION_ON),
+                #     #         coordinates=map.MapLatitudeLongitude(25, 45),
+                #     #     ),
+                #     # ],
+                # ),
                 map.CircleLayer(
                     ref=circle_layer_ref,
                     circles=[
@@ -138,11 +151,12 @@ def main(page: ft.Page):
                             border_color=ft.colors.RED,
                             gradient_colors=[ft.colors.BLACK, ft.colors.BLACK],
                             color=ft.colors.with_opacity(0.6, ft.colors.GREEN),
-                            coordinates=[
-                                map.MapLatitudeLongitude(10, 10),
-                                map.MapLatitudeLongitude(30, 15),
-                                map.MapLatitudeLongitude(25, 45),
-                            ],
+                            coordinates=my_coord,
+                            # coordinates=[
+                            #     map.MapLatitudeLongitude(10, 10),
+                            #     map.MapLatitudeLongitude(30, 15),
+                            #     map.MapLatitudeLongitude(25, 45),
+                            # ],
                         ),
                     ],
                 ),
