@@ -25,7 +25,16 @@ with open(file_location, "r+") as i_file, open(result_file, "w+") as r_file:
             sum_lat.append(record[0])
             sum_lon.append(record[1])
             sum_sog.append(record[2])
-        data[key] = {"lat" : statistics.mean(sum_lat), "lon": statistics.mean(sum_lon),"sog": statistics.mean(sum_sog)}
+        sum_lat.sort()
+        sum_lon.sort()
+        sum_sog.sort()
+        sum_lat.pop(0)
+        sum_lon.pop(0)
+        sum_sog.pop(0)
+        sum_lat.pop()
+        sum_lon.pop()
+        sum_sog.pop()
+        data[key] = {"lat" : sum_lat[-1], "lon": sum_lon[-1],"sog": sum_sog[-1]}
 
 
     yaml.safe_dump(data, r_file)

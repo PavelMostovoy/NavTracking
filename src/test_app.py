@@ -3,6 +3,9 @@ import flet as ft
 import flet.map as map
 import yaml
 from pathlib import Path
+
+from flet_core.map import DottedStrokePattern
+
 data_src = Path.cwd().parent.joinpath("data")
 
 
@@ -17,6 +20,20 @@ for coord in my_markers_dict.values():
         content=ft.Icon(ft.icons.LOCATION_ON),
         coordinates=map.MapLatitudeLongitude(coord["lat"], coord["lon"])))
     my_coord.append(map.MapLatitudeLongitude(coord["lat"], coord["lon"]))
+
+list_of_circles =[]
+for coord in my_coord:
+    list_of_circles.append(
+        map.CircleMarker(
+                            radius=5,
+                            coordinates=coord,
+                            color=ft.colors.RED,
+                            border_color=ft.colors.BLUE,
+                            border_stroke_width=1,
+                        )
+    )
+
+
 
 def main(page: ft.Page):
     marker_layer_ref = ft.Ref[map.MarkerLayer]()
@@ -64,8 +81,8 @@ def main(page: ft.Page):
         map.Map(
             expand=True,
             configuration=map.MapConfiguration(
-                initial_center=map.MapLatitudeLongitude(42, 3),
-                initial_zoom=4.2,
+                initial_center=map.MapLatitudeLongitude(42.703622, 3.038975),
+                initial_zoom=15,
                 interaction_configuration=map.MapInteractionConfiguration(
                     flags=map.MapInteractiveFlag.ALL
                 ),
@@ -119,34 +136,26 @@ def main(page: ft.Page):
                 # ),
                 map.CircleLayer(
                     ref=circle_layer_ref,
-                    circles=[
-                        map.CircleMarker(
-                            radius=10,
-                            coordinates=map.MapLatitudeLongitude(16, 24),
-                            color=ft.colors.RED,
-                            border_color=ft.colors.BLUE,
-                            border_stroke_width=4,
-                        ),
-                    ],
+                    circles=list_of_circles,
                 ),
-                map.PolygonLayer(
-                    polygons=[
-                        map.PolygonMarker(
-                            label="Popular Touristic Area",
-                            label_text_style=ft.TextStyle(
-                                color=ft.colors.BLACK,
-                                size=15,
-                                weight=ft.FontWeight.BOLD,
-                            ),
-                            color=ft.colors.with_opacity(0.3, ft.colors.BLUE),
-                            coordinates=[
-                                map.MapLatitudeLongitude(10, 10),
-                                map.MapLatitudeLongitude(30, 15),
-                                map.MapLatitudeLongitude(25, 45),
-                            ],
-                        ),
-                    ],
-                ),
+                # map.PolygonLayer(
+                #     polygons=[
+                #         map.PolygonMarker(
+                #             label="Popular Touristic Area",
+                #             label_text_style=ft.TextStyle(
+                #                 color=ft.colors.BLACK,
+                #                 size=15,
+                #                 weight=ft.FontWeight.BOLD,
+                #             ),
+                #             color=ft.colors.with_opacity(0.3, ft.colors.BLUE),
+                #             coordinates=[
+                #                 map.MapLatitudeLongitude(10, 10),
+                #                 map.MapLatitudeLongitude(30, 15),
+                #                 map.MapLatitudeLongitude(25, 45),
+                #             ],
+                #         ),
+                #     ],
+                # ),
                 map.PolylineLayer(
                     polylines=[
                         map.PolylineMarker(
@@ -155,11 +164,7 @@ def main(page: ft.Page):
                             gradient_colors=[ft.colors.BLACK, ft.colors.BLACK],
                             color=ft.colors.with_opacity(0.6, ft.colors.GREEN),
                             coordinates=my_coord,
-                            # coordinates=[
-                            #     map.MapLatitudeLongitude(10, 10),
-                            #     map.MapLatitudeLongitude(30, 15),
-                            #     map.MapLatitudeLongitude(25, 45),
-                            # ],
+                            stroke_pattern=DottedStrokePattern(1),
                         ),
                     ],
                 ),
