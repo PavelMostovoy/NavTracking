@@ -2,8 +2,11 @@ import random
 import flet as ft
 import flet.map as map
 import yaml
+from pathlib import Path
+data_src = Path.cwd().parent.joinpath("data")
 
-with open("parsed.yaml", "r+") as file:
+
+with open(data_src.joinpath("parsed.yaml"), "r+") as file:
     my_markers_dict = yaml.safe_load(file)
 
 my_markers = []
