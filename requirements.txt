@@ -1,3 +1,5 @@
 flet
 PyYAML
 pynmeagps
+fastapi[standard]
+uvicorn
