@@ -54,10 +54,10 @@ def main(page: ft.Page):
             f"Name: {e.name} - coordinates: {e.coordinates} - Local: ({e.local_x}, {e.local_y}) - Global: ({e.global_x}, {e.global_y})"
         )
         if e.name == "tap":
-            aprox_lat = round(e.coordinates.latitude,5)
-            aprox_lon = round(e.coordinates.longitude,5)
+            aprox_lat = round(e.coordinates.latitude,4)
+            aprox_lon = round(e.coordinates.longitude,4)
             for i, marker in enumerate(circle_layer_ref.current.circles):
-                if round(marker.coordinates.longitude,5) == aprox_lon and  round(marker.coordinates.latitude,5) == aprox_lat:
+                if round(marker.coordinates.longitude,4) == aprox_lon and  round(marker.coordinates.latitude,4) == aprox_lat:
                     dlg.title = ft.Text(f"SOG : {circle_layer_ref.current.circles[i].data}")
                     page.open(dlg)
                     break
@@ -172,12 +172,13 @@ def main(page: ft.Page):
                 map.PolylineLayer(
                     polylines=[
                         map.PolylineMarker(
-                            border_stroke_width=3,
-                            border_color=ft.colors.RED,
+                            border_stroke_width=2,
+                            border_color=ft.colors.GREEN,
                             gradient_colors=[ft.colors.BLACK, ft.colors.BLACK],
                             color=ft.colors.with_opacity(0.6, ft.colors.GREEN),
                             coordinates=my_coord,
-                            stroke_pattern=DottedStrokePattern(1),
+                            use_stroke_width_in_meter = True,
+                            # stroke_pattern=DottedStrokePattern(1),
                         ),
                     ],
                 ),
