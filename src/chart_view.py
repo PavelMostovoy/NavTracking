@@ -12,12 +12,12 @@ data_src = Path.cwd().parent.joinpath("data")
 
 s = State()
 
-with open(data_src.joinpath("parsed.yaml"), "r+") as file:
-    data_dict = yaml.safe_load(file)
+with open(data_src.joinpath("parsed_list.yaml"), "r+") as file:
+    data_list = yaml.safe_load(file)
 
 speed_data = []
-for key, value in enumerate(data_dict.values()):
-    if 0 < value["sog"] < 15:
+for key, value in enumerate(data_list):
+    if value["sog"] < 15:
         speed_data.append(ft.LineChartDataPoint(key, value["sog"]))
 
 

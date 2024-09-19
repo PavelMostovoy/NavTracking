@@ -14,15 +14,18 @@ with open(data_src.joinpath("parsed_list.yaml"), "r+") as file:
 
 my_markers = []
 my_coord = []
+my_data =[]
 for coord in my_markers_list:
-    my_markers.append(
-    map.Marker(
-        content=ft.Icon(ft.icons.LOCATION_ON),
-        coordinates=map.MapLatitudeLongitude(coord["lat"], coord["lon"])))
+    # my_markers.append(
+    # map.Marker(
+    #     content=ft.Icon(ft.icons.LOCATION_ON),
+    #     coordinates=map.MapLatitudeLongitude(coord["lat"], coord["lon"])))
     my_coord.append(map.MapLatitudeLongitude(coord["lat"], coord["lon"]))
+    my_data.append((map.MapLatitudeLongitude(coord["lat"], coord["lon"]), coord['sog']))
 
 list_of_circles =[]
-for coord in my_coord:
+for coord_data in my_data:
+    coord, data = coord_data
     list_of_circles.append(
         map.CircleMarker(
                             radius=5,
@@ -30,6 +33,7 @@ for coord in my_coord:
                             color=ft.colors.RED,
                             border_color=ft.colors.BLUE,
                             border_stroke_width=1,
+                            data = data
                         )
     )
 
@@ -38,27 +42,33 @@ for coord in my_coord:
 def main(page: ft.Page):
     marker_layer_ref = ft.Ref[map.MarkerLayer]()
     circle_layer_ref = ft.Ref[map.CircleLayer]()
+    sog_message = ""
+
 
     def handle_tap(e: map.MapTapEvent):
         print(
             f"Name: {e.name} - coordinates: {e.coordinates} - Local: ({e.local_x}, {e.local_y}) - Global: ({e.global_x}, {e.global_y})"
         )
         if e.name == "tap":
-            aprox_lat = round(e.coordinates.latitude)
-            aprox_lon = round(e.coordinates.longitude)
-            for i, marker in enumerate(marker_layer_ref.current.markers):
-                if round(marker.coordinates.longitude) == aprox_lon and  round(marker.coordinates.latitude) == aprox_lat:
-                    marker_layer_ref.current.markers.pop(i)
-                    break
-            else:
-                marker_layer_ref.current.markers.append(
-                    map.Marker(
-                        content=ft.Icon(
-                            ft.icons.LOCATION_ON, color=ft.cupertino_colors.DESTRUCTIVE_RED
-                        ),
-                        coordinates=e.coordinates,
+            aprox_lat = round(e.coordinates.latitude,5)
+            aprox_lon = round(e.coordinates.longitude,5)
+            for i, marker in enumerate(circle_layer_ref.current.circles):
+                if round(marker.coordinates.longitude,5) == aprox_lon and  round(marker.coordinates.latitude,5) == aprox_lat:
+                    print(circle_layer_ref.current.circles[i].data)
+                    dlg = ft.AlertDialog(
+                        title=ft.Text(f"SOG : {circle_layer_ref.current.circles[i].data}"),
                     )
-                )
+                    page.open(dlg)
+                    break
+            # else:
+            #     marker_layer_ref.current.markers.append(
+            #         map.Marker(
+            #             content=ft.Icon(
+            #                 ft.icons.LOCATION_ON, color=ft.cupertino_colors.DESTRUCTIVE_RED
+            #             ),
+            #             coordinates=e.coordinates,
+            #         )
+            #     )
         elif e.name == "secondary_tap":
             circle_layer_ref.current.circles.append(
                 map.CircleMarker(
@@ -72,9 +82,10 @@ def main(page: ft.Page):
         page.update()
 
     def handle_event(e: map.MapEvent):
-        print(
-            f"{e.name} - Source: {e.source} - Center: {e.center} - Zoom: {e.zoom} - Rotation: {e.rotation}"
-        )
+        pass
+        # print(
+        #     f"{e.name} - Source: {e.source} - Center: {e.center} - Zoom: {e.zoom} - Rotation: {e.rotation}"
+        # )
 
     page.add(
         ft.Text("Header record : Click anywhere to add a Marker, right-click to add a CircleMarker."),
