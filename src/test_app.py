@@ -43,12 +43,12 @@ def main(page: ft.Page):
     marker_layer_ref = ft.Ref[map.MarkerLayer]()
     circle_layer_ref = ft.Ref[map.CircleLayer]()
 
-    dlg = ft.AlertDialog(data=None,
-                         title=ft.Text(f"SOG :"),
-                         on_dismiss=lambda e: page.update(),
-                         )
 
     def handle_tap(e: map.MapTapEvent):
+        dlg = ft.AlertDialog(data=None,
+                             title=ft.Text(f"SOG :"),
+                             modal=False,
+                             )
         print(
             f"Name: {e.name} - coordinates: {e.coordinates} - Local: ({e.local_x}, {e.local_y}) - Global: ({e.global_x}, {e.global_y})"
         )
