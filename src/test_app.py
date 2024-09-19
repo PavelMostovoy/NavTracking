@@ -9,12 +9,12 @@ from flet_core.map import DottedStrokePattern
 data_src = Path.cwd().parent.joinpath("data")
 
 
-with open(data_src.joinpath("parsed.yaml"), "r+") as file:
-    my_markers_dict = yaml.safe_load(file)
+with open(data_src.joinpath("parsed_list.yaml"), "r+") as file:
+    my_markers_list = yaml.safe_load(file)
 
 my_markers = []
 my_coord = []
-for coord in my_markers_dict.values():
+for coord in my_markers_list:
     my_markers.append(
     map.Marker(
         content=ft.Icon(ft.icons.LOCATION_ON),
