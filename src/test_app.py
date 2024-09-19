@@ -71,15 +71,16 @@ def main(page: ft.Page):
             #         )
             #     )
         elif e.name == "secondary_tap":
-            circle_layer_ref.current.circles.append(
-                map.CircleMarker(
-                    radius=random.randint(5, 10),
-                    coordinates=e.coordinates,
-                    color=ft.colors.random_color(),
-                    border_color=ft.colors.random_color(),
-                    border_stroke_width=4,
-                )
-            )
+            pass
+            # circle_layer_ref.current.circles.append(
+            #     map.CircleMarker(
+            #         radius=random.randint(5, 10),
+            #         coordinates=e.coordinates,
+            #         color=ft.colors.random_color(),
+            #         border_color=ft.colors.random_color(),
+            #         border_stroke_width=4,
+            #     )
+            # )
         page.update()
 
     def handle_event(e: map.MapEvent):
