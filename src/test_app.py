@@ -37,15 +37,16 @@ for coord_data in my_data:
                         )
     )
 
-sog_message =""
+
 
 def main(page: ft.Page):
     marker_layer_ref = ft.Ref[map.MarkerLayer]()
     circle_layer_ref = ft.Ref[map.CircleLayer]()
 
-    dlg = ft.AlertDialog(
-        title=ft.Text(f"SOG : {sog_message}"),
-    )
+    dlg = ft.AlertDialog(data=None,
+                         title=ft.Text(f"SOG :"),
+                         on_dismiss=lambda e: page.update(),
+                         )
 
     def handle_tap(e: map.MapTapEvent):
         print(
@@ -56,7 +57,7 @@ def main(page: ft.Page):
             aprox_lon = round(e.coordinates.longitude,5)
             for i, marker in enumerate(circle_layer_ref.current.circles):
                 if round(marker.coordinates.longitude,5) == aprox_lon and  round(marker.coordinates.latitude,5) == aprox_lat:
-                    sog_message = circle_layer_ref.current.circles[i].data
+                    dlg.title = ft.Text(f"SOG : {circle_layer_ref.current.circles[i].data}")
                     page.open(dlg)
                     break
             # else:
