@@ -11,7 +11,7 @@ with open(data_src.joinpath("parsed_list.yaml"), "r+") as file:
 
 
 def main(page: ft.Page):
-    page.title = "Containers - clickable and not"
+    page.title = "Voile monitoring"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
