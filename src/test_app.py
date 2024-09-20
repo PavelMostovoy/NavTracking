@@ -1,97 +1,67 @@
-import random
+from pathlib import Path
+
 import flet as ft
 import flet.map as map
 import yaml
-from pathlib import Path
-
-from flet_core.map import DottedStrokePattern
 
 data_src = Path.cwd().parent.joinpath("data")
 
-
 with open(data_src.joinpath("parsed_list.yaml"), "r+") as file:
-    my_markers_list = yaml.safe_load(file)
-
-my_markers = []
-my_coord = []
-my_data =[]
-for coord in my_markers_list:
-    # my_markers.append(
-    # map.Marker(
-    #     content=ft.Icon(ft.icons.LOCATION_ON),
-    #     coordinates=map.MapLatitudeLongitude(coord["lat"], coord["lon"])))
-    my_coord.append(map.MapLatitudeLongitude(coord["lat"], coord["lon"]))
-    my_data.append((map.MapLatitudeLongitude(coord["lat"], coord["lon"]), coord['sog']))
-
-list_of_circles =[]
-for coord_data in my_data:
-    coord, data = coord_data
-    list_of_circles.append(
-        map.CircleMarker(
-                            radius=5,
-                            coordinates=coord,
-                            color=ft.colors.RED,
-                            border_color=ft.colors.BLUE,
-                            border_stroke_width=1,
-                            data = data
-                        )
-    )
-
+    positions_list = yaml.safe_load(file)
 
 
 def main(page: ft.Page):
-    marker_layer_ref = ft.Ref[map.MarkerLayer]()
+    page.title = "Containers - clickable and not"
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.window.width = 1024
+    page.window.height = 900
+
+    slider_ref = ft.Ref[ft.Slider]()
+    map_container = ft.Ref[ft.Container]()
+    data_container = ft.Ref[ft.Container]()
     circle_layer_ref = ft.Ref[map.CircleLayer]()
+    polyline_layer_ref = ft.Ref[map.PolylineLayer]()
 
-    dlg = ft.AlertDialog(data=None,
-                         title=ft.Text(f"SOG :"),
-                         modal=False,
-                         )
-
-    def handle_tap(e: map.MapTapEvent):
-
-        print(
-            f"Name: {e.name} - coordinates: {e.coordinates} - Local: ({e.local_x}, {e.local_y}) - Global: ({e.global_x}, {e.global_y})"
-        )
-        if e.name == "tap":
-            aprox_lat = round(e.coordinates.latitude,4)
-            aprox_lon = round(e.coordinates.longitude,4)
-            for i, marker in enumerate(circle_layer_ref.current.circles):
-                if round(marker.coordinates.longitude,4) == aprox_lon and  round(marker.coordinates.latitude,4) == aprox_lat:
-                    dlg.title = ft.Text(f"SOG : {circle_layer_ref.current.circles[i].data}")
-                    page.open(dlg)
-                    break
-            # else:
-            #     marker_layer_ref.current.markers.append(
-            #         map.Marker(
-            #             content=ft.Icon(
-            #                 ft.icons.LOCATION_ON, color=ft.cupertino_colors.DESTRUCTIVE_RED
-            #             ),
-            #             coordinates=e.coordinates,
-            #         )
-            #     )
-        elif e.name == "secondary_tap":
-            pass
-            # circle_layer_ref.current.circles.append(
-            #     map.CircleMarker(
-            #         radius=random.randint(5, 10),
-            #         coordinates=e.coordinates,
-            #         color=ft.colors.random_color(),
-            #         border_color=ft.colors.random_color(),
-            #         border_stroke_width=4,
-            #     )
-            # )
+    def resized(containers: []):
+        for reference in containers:
+            reference.current.width = page.width
+            if reference.current.data == "MAP":
+                reference.current.height = page.height * 0.75
         page.update()
 
-    def handle_event(e: map.MapEvent):
-        pass
-        # print(
-        #     f"{e.name} - Source: {e.source} - Center: {e.center} - Zoom: {e.zoom} - Rotation: {e.rotation}"
-        # )
+    def get_circle(value):
+        coord = map.MapLatitudeLongitude(positions_list[value]["lat"], positions_list[value]["lon"])
+        circle = map.CircleMarker(
+            radius=5,
+            coordinates=coord,
+            color=ft.colors.RED,
+            border_color=ft.colors.BLUE,
+            border_stroke_width=1,
+        )
+        return circle
 
-    page.add(
-        ft.Text("Header record : Click anywhere to add a Marker, right-click to add a CircleMarker."),
-        map.Map(
+    def get_tail(value):
+        tail_length = value - 20
+        if tail_length < 0:
+            tail_length = 0
+        tail = positions_list[tail_length:value+1]
+        tail_coord = []
+        for coord in tail:
+            tail_coord.append(map.MapLatitudeLongitude(coord["lat"], coord["lon"]))
+        return tail_coord
+
+
+    def slider_change(e):
+        value = int(e.control.value)
+        circle = get_circle(value)
+        circle_layer_ref.current.circles = [circle]
+        polyline_layer_ref.current.coordinates = get_tail(value)
+        page.update()
+
+    top_container = ft.Container(
+        ref=map_container,
+        content=map.Map(
             expand=True,
             configuration=map.MapConfiguration(
                 initial_center=map.MapLatitudeLongitude(42.703622, 3.038975),
@@ -100,91 +70,86 @@ def main(page: ft.Page):
                     flags=map.MapInteractiveFlag.ALL
                 ),
                 on_init=lambda e: print(f"Initialized Map"),
-                on_tap=handle_tap,
-                on_secondary_tap=handle_tap,
-                on_long_press=handle_tap,
-                on_event=handle_event,
             ),
             layers=[
                 map.TileLayer(
                     url_template="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                     on_image_error=lambda e: print("TileLayer Error"),
                 ),
-                map.RichAttribution(
-                    attributions=[
-                        map.TextSourceAttribution(
-                            text="OpenStreetMap Contributors",
-                            on_click=lambda e: e.page.launch_url(
-                                "https://openstreetmap.org/copyright"
-                            ),
-                        ),
-                        map.TextSourceAttribution(
-                            text="Flet",
-                            on_click=lambda e: e.page.launch_url("https://flet.dev"),
-                        ),
-                    ]
-                ),
-                map.SimpleAttribution(
-                    text="Flet",
-                    alignment=ft.alignment.top_right,
-                    on_click=lambda e: print("Clicked SimpleAttribution"),
-                ),
-                # map.MarkerLayer(
-                #     ref=marker_layer_ref,
-                #     markers = my_markers,
-                #     # markers=[
-                #     #     map.Marker(
-                #     #         content=ft.Icon(ft.icons.LOCATION_ON),
-                #     #         coordinates=map.MapLatitudeLongitude(30, 15),
-                #     #     ),
-                #     #     map.Marker(
-                #     #         content=ft.Icon(ft.icons.LOCATION_ON),
-                #     #         coordinates=map.MapLatitudeLongitude(10, 10),
-                #     #     ),
-                #     #     map.Marker(
-                #     #         content=ft.Icon(ft.icons.LOCATION_ON),
-                #     #         coordinates=map.MapLatitudeLongitude(25, 45),
-                #     #     ),
-                #     # ],
-                # ),
                 map.CircleLayer(
                     ref=circle_layer_ref,
-                    circles=list_of_circles,
+                    circles=[map.CircleMarker(
+                        radius=5,
+                        coordinates=map.MapLatitudeLongitude(positions_list[0]["lat"], positions_list[0]["lon"]),
+                        color=ft.colors.RED,
+                        border_color=ft.colors.BLUE,
+                        border_stroke_width=1,
+                    )],
                 ),
-                # map.PolygonLayer(
-                #     polygons=[
-                #         map.PolygonMarker(
-                #             label="Popular Touristic Area",
-                #             label_text_style=ft.TextStyle(
-                #                 color=ft.colors.BLACK,
-                #                 size=15,
-                #                 weight=ft.FontWeight.BOLD,
-                #             ),
-                #             color=ft.colors.with_opacity(0.3, ft.colors.BLUE),
-                #             coordinates=[
-                #                 map.MapLatitudeLongitude(10, 10),
-                #                 map.MapLatitudeLongitude(30, 15),
-                #                 map.MapLatitudeLongitude(25, 45),
-                #             ],
-                #         ),
-                #     ],
-                # ),
                 map.PolylineLayer(
                     polylines=[
                         map.PolylineMarker(
+                            ref=polyline_layer_ref,
                             border_stroke_width=2,
                             border_color=ft.colors.GREEN,
                             gradient_colors=[ft.colors.BLACK, ft.colors.BLACK],
                             color=ft.colors.with_opacity(0.6, ft.colors.GREEN),
-                            coordinates=my_coord,
-                            use_stroke_width_in_meter = True,
-                            # stroke_pattern=DottedStrokePattern(1),
+                            coordinates=[],
+                            use_stroke_width_in_meter=True,
                         ),
                     ],
-                ),
+                )
             ],
         ),
+        margin=10,
+        padding=10,
+        alignment=ft.alignment.top_center,
+        bgcolor=ft.colors.AMBER,
+        width=page.width,
+        height=page.height * 0.75,
+        border_radius=10,
+        data="MAP"
     )
+    middle_container = ft.Container(
+        ref=data_container,
+        content=ft.Text("Clickable with Ink"),
+        margin=10,
+        padding=10,
+        alignment=ft.alignment.center,
+        bgcolor=ft.colors.CYAN_200,
+        width=page.width,
+        height=20,
+        border_radius=10,
+        ink=True,
+        on_click=lambda e: print("Clickable with Ink clicked!"),
+    )
+    checkboxes = [ft.Checkbox(adaptive=True, label="Adaptive Checkbox 1", value=True),
+                  ft.Checkbox(adaptive=True, label="Adaptive Checkbox2", value=True), ]
+    check_boxes = ft.Row(
+        controls=checkboxes
+    )
+    page.add(
+        ft.Column(spacing=0,
+                  controls=[
+                      check_boxes,
+                      top_container,
+                      middle_container,
+                      ft.Slider(
+                          ref=slider_ref,
+                          min=0,
+                          max=len(positions_list) - 1,
+                          # divisions=100,
+                          value=0,
+                          label="{value}",
+                          width=page.width,
+                          on_change=slider_change
+                      )
+                  ],
+                  alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                  ),
+    )
+
+    page.on_resized = lambda x: resized([map_container, data_container, slider_ref])
 
 
 ft.app(main)
