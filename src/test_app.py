@@ -27,17 +27,18 @@ def main(page: ft.Page):
         for reference in containers:
             reference.current.width = page.width
             if reference.current.data == "MAP":
+                reference.current.width = page.width * 0.8
                 reference.current.height = page.height * 0.75
         page.update()
 
     def get_circle(value):
         coord = map.MapLatitudeLongitude(positions_list[value]["lat"], positions_list[value]["lon"])
         circle = map.CircleMarker(
-            radius=5,
+            radius=6,
             coordinates=coord,
-            color=ft.colors.RED,
+            color=ft.colors.GREEN,
             border_color=ft.colors.BLUE,
-            border_stroke_width=1,
+            border_stroke_width=2,
         )
         return circle
 
@@ -45,18 +46,18 @@ def main(page: ft.Page):
         tail_length = value - 20
         if tail_length < 0:
             tail_length = 0
-        tail = positions_list[tail_length:value+1]
+        tail = positions_list[tail_length:value + 1]
         tail_coord = []
         for coord in tail:
             tail_coord.append(map.MapLatitudeLongitude(coord["lat"], coord["lon"]))
         return tail_coord
-
 
     def slider_change(e):
         value = int(e.control.value)
         circle = get_circle(value)
         circle_layer_ref.current.circles = [circle]
         polyline_layer_ref.current.coordinates = get_tail(value)
+        data_container.current.content = ft.Text(value=f"{round(positions_list[value]['sog'], 1)}", size=30)
         page.update()
 
     top_container = ft.Container(
@@ -79,11 +80,11 @@ def main(page: ft.Page):
                 map.CircleLayer(
                     ref=circle_layer_ref,
                     circles=[map.CircleMarker(
-                        radius=5,
+                        radius=6,
                         coordinates=map.MapLatitudeLongitude(positions_list[0]["lat"], positions_list[0]["lon"]),
-                        color=ft.colors.RED,
+                        color=ft.colors.GREEN,
                         border_color=ft.colors.BLUE,
-                        border_stroke_width=1,
+                        border_stroke_width=2,
                     )],
                 ),
                 map.PolylineLayer(
@@ -112,19 +113,19 @@ def main(page: ft.Page):
     )
     middle_container = ft.Container(
         ref=data_container,
-        content=ft.Text("Clickable with Ink"),
+        content=ft.Text("Voile #"),
         margin=10,
         padding=10,
         alignment=ft.alignment.center,
-        bgcolor=ft.colors.CYAN_200,
-        width=page.width,
-        height=20,
+        bgcolor=polyline_layer_ref.current.border_color,
+        width=100,
+        height=100,
         border_radius=10,
         ink=True,
         on_click=lambda e: print("Clickable with Ink clicked!"),
     )
-    checkboxes = [ft.Checkbox(adaptive=True, label="Adaptive Checkbox 1", value=True),
-                  ft.Checkbox(adaptive=True, label="Adaptive Checkbox2", value=True), ]
+    checkboxes = [ft.Checkbox(adaptive=True, label="Voile # 5555 FRA", value=True, active_color =ft.colors.RED),
+                  ft.Checkbox(adaptive=True, label="Voile # 4444 FRA", value=True, active_color =ft.colors.GREEN), ]
     check_boxes = ft.Row(
         controls=checkboxes
     )
@@ -132,8 +133,22 @@ def main(page: ft.Page):
         ft.Column(spacing=0,
                   controls=[
                       check_boxes,
-                      top_container,
-                      middle_container,
+                      ft.Row(
+                          controls=[top_container,
+                                    ft.Column(
+                                        controls=[middle_container, ft.Container(
+                                            content=ft.Text("Voile #"),
+                                            margin=10,
+                                            padding=10,
+                                            alignment=ft.alignment.center,
+                                            bgcolor=ft.colors.RED,
+                                            width=100,
+                                            height=100,
+                                            border_radius=10,
+                                            ink=True,
+                                        )],
+                                        alignment=ft.MainAxisAlignment.START, )]
+                      ),
                       ft.Slider(
                           ref=slider_ref,
                           min=0,
@@ -149,7 +164,7 @@ def main(page: ft.Page):
                   ),
     )
 
-    page.on_resized = lambda x: resized([map_container, data_container, slider_ref])
+    page.on_resized = lambda x: resized([map_container, slider_ref])
 
 
 ft.app(main)
