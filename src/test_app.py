@@ -14,8 +14,6 @@ def main(page: ft.Page):
     page.title = "Containers - clickable and not"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.window.width = 1024
-    page.window.height = 900
 
     slider_ref = ft.Ref[ft.Slider]()
     map_container = ft.Ref[ft.Container]()
@@ -27,7 +25,7 @@ def main(page: ft.Page):
         for reference in containers:
             reference.current.width = page.width
             if reference.current.data == "MAP":
-                reference.current.width = page.width * 0.8
+                reference.current.width = page.width - 200
                 reference.current.height = page.height * 0.75
         page.update()
 
@@ -66,7 +64,7 @@ def main(page: ft.Page):
             expand=True,
             configuration=map.MapConfiguration(
                 initial_center=map.MapLatitudeLongitude(42.703622, 3.038975),
-                initial_zoom=15,
+                initial_zoom=17,
                 interaction_configuration=map.MapInteractionConfiguration(
                     flags=map.MapInteractiveFlag.ALL
                 ),
@@ -106,8 +104,8 @@ def main(page: ft.Page):
         padding=10,
         alignment=ft.alignment.top_center,
         bgcolor=ft.colors.AMBER,
-        width=page.width,
-        height=page.height * 0.75,
+        width=page.width -200,
+        height=page.height -200,
         border_radius=10,
         data="MAP"
     )
@@ -124,10 +122,12 @@ def main(page: ft.Page):
         ink=True,
         on_click=lambda e: print("Clickable with Ink clicked!"),
     )
-    checkboxes = [ft.Checkbox(adaptive=True, label="Voile # 5555 FRA", value=True, active_color =ft.colors.RED),
-                  ft.Checkbox(adaptive=True, label="Voile # 4444 FRA", value=True, active_color =ft.colors.GREEN), ]
+    checkboxes = [ft.Checkbox(adaptive=True, label="Voile # 5555 FRA", value=True, active_color=ft.colors.RED),
+                  ft.Checkbox(adaptive=True, label="Voile # 4444 FRA", value=True, active_color=ft.colors.GREEN), ]
     check_boxes = ft.Row(
-        controls=checkboxes
+        controls=checkboxes,
+        height=50,
+        alignment=ft.alignment.top_center,
     )
     page.add(
         ft.Column(spacing=0,
@@ -147,8 +147,8 @@ def main(page: ft.Page):
                                             border_radius=10,
                                             ink=True,
                                         )],
-                                        alignment=ft.MainAxisAlignment.START, )]
-                      ),
+                                        alignment=ft.MainAxisAlignment.START, )],
+                          alignment=ft.MainAxisAlignment.START),
                       ft.Slider(
                           ref=slider_ref,
                           min=0,
@@ -157,6 +157,7 @@ def main(page: ft.Page):
                           value=0,
                           label="{value}",
                           width=page.width,
+                          height= 50,
                           on_change=slider_change
                       )
                   ],
