@@ -1,15 +1,15 @@
+from pathlib import Path
 from typing import List
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text, Date, \
-    DateTime, create_engine, Float, select
+from sqlalchemy import ForeignKey, create_engine
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 import sqlalchemy
-from sqlalchemy.orm import Session
 from datetime import datetime
 
-Base = sqlalchemy.orm.declarative_base()
+db_path = Path.cwd().parent.joinpath("nav_app.sqlite")
 
+Base = sqlalchemy.orm.declarative_base()
 
 class Sailboat(Base):
     __tablename__ = "sailboats"
@@ -32,12 +32,11 @@ class Sailboat(Base):
                                                      cascade="all, delete-orphan")
     name: Mapped[str] = mapped_column(comment='Racer')
     birth_date: Mapped[datetime] = mapped_column(comment='Birth date')
-    sclass: Mapped[str] = mapped_column(String(5), default="OPTI", comment='Class')
+    sclass: Mapped[str] = mapped_column(default="OPTI", comment='Class')
     license: Mapped[str] = mapped_column(nullable=True)
 
     def __repr__(self):
         return f'{self.sail_id} {self.sclass} {self.name} {self.birth_date}'
-
 
 class NavData(Base):
     __tablename__ = "nav_data"
@@ -57,46 +56,4 @@ class NavData(Base):
     def __repr__(self):
         return f'{self.id} {self.parent_id} {self.time} {self.lat} {self.lon} {self.sog}'
 
-
-engine = create_engine('sqlite:///forein_app.sqlite')
-Base.metadata.create_all(engine)
-
-# with Session(bind=engine) as session:
-#
-#
-#     user = session.query(Sailboat).all()[1]
-#     print(user.children)
-
-
-with Session(bind=engine) as session:
-    user = session.query(Sailboat).all()
-    if user:
-        user = session.query(Sailboat).all()[0]
-    else:
-        user = session.query(Sailboat).first()
-
-    if not user:
-        user = Sailboat()
-    user.sail_id = "3333FRA"
-    user.name = "Jule"
-    user.birth_date = datetime.today()
-    user.sclass = "OPTI1"
-
-    coord = NavData()
-    coord.time = datetime.now()
-    coord.lat = 1.24
-    coord.lon = 22.5
-    coord.sog = 1
-
-    user.children.append(coord)
-
-    session.add(user)
-    print(session.query(Sailboat).first())
-    print(session.query(NavData).all())
-    session.commit()
-
-    # session.delete(user)
-    print(session.query(Sailboat).first())
-    print(user.children)
-
-    session.commit()
+engine = create_engine(f'sqlite:///{db_path}')

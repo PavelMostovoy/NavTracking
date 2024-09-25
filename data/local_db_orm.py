@@ -1,6 +1,3 @@
-import csv
-import os
-from pathlib import Path
 from typing import List
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, Date, \
@@ -58,34 +55,53 @@ class NavData(Base):
     def __repr__(self):
         return f'{self.id} {self.parent_id} {self.time} {self.lat} {self.lon} {self.sog}'
 
-db_path = Path(__file__).parent.parent.parent.joinpath("nav_app.sqlite")
+engine = create_engine('sqlite:///nav_app.sqlite')
+Base.metadata.create_all(engine)
 
-engine = create_engine(f'sqlite:///{db_path}')
+# with Session(bind=engine) as session:
+#
+#
+#     user = session.query(Sailboat).all()[1]
+#     print(user.children)
 
-data_location = Path(__file__).parent.parent.parent.joinpath("data").joinpath("20240921_20240922_102258_123154")
+users_list = ["1111FRA", "2222FRA", "3333FRA", "4444FRA", "5555FRA" ]
 
+with Session(bind=engine) as session:
+    users = session.query(Sailboat).all()
+    if users:
+        for user in users:
+            print(user.sail_id)
+    else:
+        for user in users_list:
+            user = Sailboat(sail_id=user, name="template", birth_date=datetime.now(), sclass="OPTIMIST")
+            session.add(user)
+        session.commit()
 
-for root, dirs, files in os.walk(data_location):
-    for file in files:
-        if file.endswith(".csv"):
-            file_name = os.path.join(root, file)
-            with open(file_name, "r", newline="") as f, Session(engine) as session:
-                user = session.query(Sailboat).all()[1]
-                values = csv.DictReader(f, delimiter=';', quotechar='|')
-                for row in values:
-                    coord = NavData()
-                    composed_time = f"{row['Date']}::{row['Hour']}"
-                    # date = datetime.strptime(composed_time, '%d/%m/%YY/%H:%M:%S.%f')
-                    coord.time = datetime.strptime(composed_time, '%d/%m/%Y::%H:%M:%S')
-                    if "N" in row["Lat"]:
-                        coord.lat = float(row["Lat"].strip("NS"))
-                    else:
-                        coord.lat = - float(row["Lat"].strip("NS"))
-                    if "E" in row["Lon"]:
-                        coord.lon = float(row["Lon"].strip("EW"))
-                    else:
-                        coord.lon = float(row["Lon"].strip("EW"))
-                    coord.sog = float(row["Speed(km/h)"])
-                    user.children.append(coord)
-                session.commit()
-
+    # else:
+    #     user = session.query(Sailboat).first()
+    #
+    # if not user:
+    #     user = Sailboat()
+    # user.sail_id = "3333FRA"
+    # user.name = "Jule"
+    # user.birth_date = datetime.today()
+    # user.sclass = "OPTI1"
+    #
+    # coord = NavData()
+    # coord.time = datetime.now()
+    # coord.lat = 1.24
+    # coord.lon = 22.5
+    # coord.sog = 1
+    #
+    # user.children.append(coord)
+    #
+    # session.add(user)
+    # print(session.query(Sailboat).first())
+    # print(session.query(NavData).all())
+    # session.commit()
+    #
+    # # session.delete(user)
+    # print(session.query(Sailboat).first())
+    # print(user.children)
+    #
+    # session.commit()
