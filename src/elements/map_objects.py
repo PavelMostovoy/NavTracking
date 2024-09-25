@@ -13,7 +13,7 @@ def my_map():
         lines_count = len(users)
 
     for polyline in range(lines_count):
-        line = f_map.PolylineMarker(coordinates=[],visible=False )
+        line = f_map.PolylineMarker(coordinates=[], visible=False)
         polylines_l.append(line)
 
     map_obj = f_map.Map(

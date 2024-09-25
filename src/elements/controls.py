@@ -11,9 +11,9 @@ data_container = ft.Ref[ft.Container]()
 
 
 def manage_data_container(e):
-    order  = int(e.control.data)
+    order = int(e.control.data)
     containers = e.page.overlay[0].controls[1].controls[0].controls
-    polyline  = e.page.controls[0].layers[1].polylines[order]
+    polyline = e.page.controls[0].layers[1].polylines[order]
     coordinates = polyline.coordinates
     identifier = e.control.label
     with Session(bind=engine) as session:
@@ -32,7 +32,8 @@ def manage_data_container(e):
         polyline.color = e.control.active_color
         polyline.visible = True
         polyline.use_stroke_width_in_meter = True
-        polyline.width = 2
+        polyline.border_color = e.control.active_color
+        polyline.border_stroke_width = 2
         for coord in coords:
             prepared_coord = f_map.MapLatitudeLongitude(coord.lat, coord.lon)
             coordinates.append(prepared_coord)
@@ -45,12 +46,12 @@ def manage_data_container(e):
                 e.page.update()
 
 
-def checkbox(color: ft.colors, text, order:int):
+def checkbox(color: ft.colors, text, order: int):
     obj = ft.Checkbox(adaptive=True,
                       label=text,
                       value=False,
                       active_color=color,
-                      data = int(order),
+                      data=int(order),
                       on_change=manage_data_container)
     return obj
 
@@ -64,8 +65,7 @@ def my_checkboxes():
                ft.colors.BLUE,
                ft.colors.YELLOW,
                ft.colors.ORANGE,
-               ft.colors.AMBER,
-               ft.colors.BROWN]
+               ft.colors.AMBER]
     for i, user in enumerate(users):
         colour = choice(colours)
         colours.remove(colour)
