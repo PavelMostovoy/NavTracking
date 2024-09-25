@@ -4,3 +4,4 @@ pynmeagps
 fastapi[standard]
 uvicorn
 geopy
+sqlalchemy
