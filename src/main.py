@@ -1,7 +1,7 @@
 import flet as ft
-from src.elements.map_objects import my_map
-from src.elements.controls import my_slider, my_checkboxes, monitoring_container, slider_ref, data_monitor
-from src.helpers.utility import resized
+from elements.map_objects import my_map
+from elements.controls import my_slider, my_checkboxes, monitoring_container, slider_ref, data_monitor
+from helpers.utility import resized
 
 
 
