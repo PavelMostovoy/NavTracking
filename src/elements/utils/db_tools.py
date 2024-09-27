@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 
-from sqlalchemy import ForeignKey, create_engine
+from sqlalchemy import ForeignKey, create_engine, Column
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 import sqlalchemy
@@ -29,7 +29,9 @@ class Sailboat(Base):
             self._sail_id = value
 
     children: Mapped[List["NavData"]] = relationship(back_populates="parent",
-                                                     cascade="all, delete-orphan")
+                                                     cascade="all, delete-orphan",
+                                                     order_by=Column("time")
+                                                     )
     name: Mapped[str] = mapped_column(comment='Racer')
     birth_date: Mapped[datetime] = mapped_column(comment='Birth date')
     sclass: Mapped[str] = mapped_column(default="OPTI", comment='Class')
