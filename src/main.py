@@ -29,5 +29,5 @@ def main(page: ft.Page):
 
 
 if __name__ == '__main__':
-    uvicorn.run(ft.app(main, export_asgi_app=True), host="127.0.0.1", port=30000)
-    # ft.app(main)
+    # uvicorn.run(ft.app(main, export_asgi_app=True), host="127.0.0.1", port=30000)
+    ft.app(main)
