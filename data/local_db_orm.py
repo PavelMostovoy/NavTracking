@@ -1,3 +1,6 @@
+"""
+initial DB creation with users
+"""
 from typing import List
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, Date, \

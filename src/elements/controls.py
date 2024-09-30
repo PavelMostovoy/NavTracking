@@ -1,11 +1,14 @@
+import datetime
 from dataclasses import dataclass
 from random import choice
 
 import flet as ft
 import flet.map as f_map
+from flet_core import TimePickerEntryMode, DatePicker
 from sqlalchemy.orm import Session
 
 from .utils.db_tools import Sailboat, engine
+reference_button = ft.Ref[ft.ElevatedButton]()
 
 data_container = ft.Ref[ft.Container]()
 
@@ -28,7 +31,7 @@ def polyline_update(polyline, e):
 def coords_replace(received_coordinated, range, actual_coordinates):
     # need to be reworked
     actual_coordinates.clear()
-    for coord in received_coordinated[1000:-1000]:
+    for coord in received_coordinated[0:-1]:
         # if coord.time > datetime.strptime("22/09/2024::10:08:00", '%d/%m/%Y::%H:%M:%S'):
         prepared_coord = f_map.MapLatitudeLongitude(coord.lat, coord.lon)
         actual_coordinates.append(prepared_coord)
@@ -42,7 +45,14 @@ def manage_data_container(e):
     identifier = e.control.label
     with Session(bind=engine) as session:
         user = session.query(Sailboat).filter(Sailboat.sail_id == identifier).one()
-        received_coordinated = user.children
+        received_all_coordinated = user.children
+        received_coordinates = []
+        # 2024-09-23::00:00:00
+        start_time = datetime.datetime.strptime(f"{e.page.session.get("date").date()}::{e.page.session.get("start_time")}",'%Y-%m-%d::%H:%M:%S')
+        print(start_time)
+        for coord in received_all_coordinated:
+            if coord.time.date()==e.page.session.get("date").date():
+                received_coordinates.append(coord)
 
     if e.control.value:
         for container in containers:
@@ -54,7 +64,7 @@ def manage_data_container(e):
                                               bgcolor=e.control.active_color))
         polyline_update(polyline, e)
 
-        coords_replace(received_coordinated, 100, actual_coordinates)
+        coords_replace(received_coordinates, 100, actual_coordinates)
 
         e.page.update()
 
@@ -137,3 +147,43 @@ class MonitoringContainer(ft.Container):
 
     def build(self):
         self.on_click = lambda e: print("Clickable with Ink clicked!")
+
+
+class TimeSelector(ft.TimePicker):
+
+    @staticmethod
+    def handle_change_start(e):
+        print(f"start time {e.control.value}")
+        print(f"data {e.page.session.get("date")}")
+
+    @staticmethod
+    def handle_change_end(e):
+        print(f"end time {e.control.value}")
+
+    def __init__(self, start=False):
+        super().__init__()
+        if start:
+            self.value = "00:00:00"
+            self.on_change = self.handle_change_start
+        else:
+            # should be clarified after usage
+            self.value = "23:59:59"
+            self.on_change = self.handle_change_end
+        self.time_picker_entry_mode = TimePickerEntryMode.DIAL_ONLY
+        self.confirm_text = "Confirm"
+        self.help_text = "Select time"
+
+
+class DateSelector(DatePicker):
+
+
+    def handle_change(self,e):
+        reference_button.current.text = f"{e.control.value.date()}"
+        e.page.session.set("date",e.control.value)
+        e.page.update()
+
+    def __init__(self):
+        super().__init__()
+        self.first_date = datetime.datetime(year=2024, month=9, day=1)
+        self.on_change = self.handle_change
+

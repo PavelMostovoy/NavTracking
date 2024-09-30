@@ -1,25 +1,51 @@
+import datetime
+
 import flet as ft
 import uvicorn
 
 from elements.map_objects import MyMap
-from elements.controls import MySlider, MyCheckboxes
+from elements.controls import MySlider, MyCheckboxes, TimeSelector, DateSelector, reference_button
 
 
 def main(page: ft.Page):
+    page.session.set("date", datetime.datetime.now())
+    page.session.set("start_time", "00:00:00")
+    page.session.set("end_time", "23:59:59")
+
     def on_broadcast_message(message):
         # Need to be implemented
         print(message)
 
+    date_selector = ft.ElevatedButton(
+        ref = reference_button,
+        text = "Pick date",
+        icon=ft.icons.CALENDAR_MONTH,
+        on_click=lambda e: page.open(
+            DateSelector()
+        )
+
+    )
+
+    start_btn = ft.ElevatedButton(
+        "Start time",
+        icon=ft.icons.START,
+        on_click=lambda _: page.open(TimeSelector(start=True)),
+    )
+
+    end_btn = ft.ElevatedButton(
+        "End time",
+        icon=ft.icons.CLOSE,
+        on_click=lambda _: page.open(TimeSelector()),
+    )
+
     def main_struct():
         return ft.Column(
-            controls=[MyCheckboxes(),
+            controls=[ft.Row(controls=[MyCheckboxes(), date_selector, start_btn, end_btn]),
                       ft.Row(controls=[ft.Column(
                           # controls=[],
-                          alignment=ft.MainAxisAlignment.SPACE_BETWEEN), ],
+                          alignment=ft.MainAxisAlignment.SPACE_BETWEEN)],
                           alignment=ft.MainAxisAlignment.END),
                       ], alignment=ft.MainAxisAlignment.START, height=page.height)
-
-    page.pubsub.subscribe(on_broadcast_message)
 
     page.overlay.append(main_struct())
 

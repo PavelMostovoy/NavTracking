@@ -58,12 +58,12 @@ class NavData(Base):
     def __repr__(self):
         return f'{self.id} {self.parent_id} {self.time} {self.lat} {self.lon} {self.sog}'
 
-def main():
+def main(user_order):
     db_path = Path(__file__).parent.parent.parent.joinpath("nav_app.sqlite")
 
     engine = create_engine(f'sqlite:///{db_path}')
 
-    data_location = Path(__file__).parent.parent.parent.joinpath("data").joinpath("20240921_20240922_102258_123154")
+    data_location = Path(__file__).parent.parent.parent.joinpath("data").joinpath("ready_to_upload_data")
 
 
     for root, dirs, files in os.walk(data_location):
@@ -71,7 +71,7 @@ def main():
             if file.endswith(".csv"):
                 file_name = os.path.join(root, file)
                 with open(file_name, "r", newline="") as f, Session(engine) as session:
-                    user = session.query(Sailboat).all()[1]
+                    user = session.query(Sailboat).all()[user_order]
                     values = csv.DictReader(f, delimiter=';', quotechar='|')
                     for row in values:
                         coord = NavData()
@@ -91,4 +91,4 @@ def main():
                     session.commit()
 
 if __name__ == '__main__':
-    main()
+    main(1)
