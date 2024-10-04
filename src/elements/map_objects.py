@@ -11,6 +11,19 @@ class MyMap(flet.map.Map):
             flet.map.TileLayer(
                 url_template="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             ),
+            # Need to be properly displayed
+            flet.map.RichAttribution(
+                show_flutter_map_attribution =False,
+                attributions=[
+                    flet.map.TextSourceAttribution(
+                        text="OpenStreetMap Contributors",
+                        on_click=lambda e: e.page.launch_url(
+                            "https://openstreetmap.org/copyright"
+                        ),
+                    ),
+                ]
+
+            )
         ]
         super().__init__(layers=layers,
                          expand=True,
