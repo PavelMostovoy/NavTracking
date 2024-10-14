@@ -1,7 +1,6 @@
 /*
  * HelTec Wireless Tracer v1.1
  * www.heltec.org
-
  * */
 
 #include "LoRaWan_APP.h"
@@ -74,6 +73,8 @@ void setup() {
   digitalWrite(VGNSS_CTRL, HIGH);
 
   Serial1.begin(115200, SERIAL_8N1, 33, 34);
+  // Serial1.println("$CFGMSG,0,1,1");
+  // Serial1.println("$CFGNAV,1000,1000,100");
   Serial.println("Started");
   delay(1000);
   while (true) {
@@ -110,7 +111,8 @@ void setup() {
   while (true) {
     if (Serial1.available()) {
       // set 10Hz
-      Serial1.println("$CFGNAV,100,100,1000");
+      // Serial1.println("$CFGNAV,100,100,1000");
+      Serial1.println("$CFGNAV,1000,1000,1000");
       break;
     } else {
       sleep(100);
@@ -134,15 +136,13 @@ void loop() {
   }
 
   while (!GPS_DATA) {
-    delay(100);
-
+    delay(10);
     if (Serial1.available() > 0) {
 
       if (Serial1.peek() != '\n') {
         gps.encode(Serial1.read());
       } else {
         Serial1.read();
-        Serial.println(gps.location.isValid());
         if (!gps.location.isValid()) {
           GPS_DATA = false;
           continue;
@@ -151,7 +151,6 @@ void loop() {
         latitude = gps.location.lat();
         longitude = gps.location.lng();
         sog = gps.speed.kmph();
-        Serial.println(sog);
         GPS_DATA = true;
       }
     }
@@ -161,11 +160,7 @@ void loop() {
 
 
   if (lora_idle == true and GPS_DATA == true) {
-    // pinMode(ADC_CTRL, INPUT_PULLUP);
-    // delay(1);
-    // int vbat = analogRead(VBAT_READ) * 4.8;
-    // pinMode(ADC_CTRL, INPUT_PULLDOWN);
-    delay(500);
+    delay(100 + random(400));
     sprintf(txpacket, "**;%s;%s;%.6f;%.6f:%.2f **", Identifier, time_str, latitude, longitude, sog);  //start a package
 
     Serial.printf("\r\nsending packet \"%s\" , length %d\r\n", txpacket, strlen(txpacket));
