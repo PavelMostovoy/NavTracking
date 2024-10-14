@@ -41,6 +41,7 @@ String time_str = "";
 float latitude;
 float longitude;
 float sog;
+float seconds;
 String Identifier = "FRA5555";
 
 char txpacket[BUFFER_SIZE];
@@ -147,10 +148,16 @@ void loop() {
           GPS_DATA = false;
           continue;
         }
+        Serial.println(gps.time.second());
+        if (gps.time.second() == seconds) {
+          GPS_DATA = false;
+          continue;
+        }
         time_str = (String)gps.time.hour() + ":" + (String)gps.time.minute() + ":" + (String)gps.time.second() + ":" + (String)gps.time.centisecond();
         latitude = gps.location.lat();
         longitude = gps.location.lng();
         sog = gps.speed.kmph();
+        seconds = gps.time.second();
         GPS_DATA = true;
       }
     }
@@ -160,7 +167,7 @@ void loop() {
 
 
   if (lora_idle == true and GPS_DATA == true) {
-    delay(100 + random(400));
+    delay(random(100));
     sprintf(txpacket, "**;%s;%s;%.6f;%.6f:%.2f **", Identifier, time_str, latitude, longitude, sog);  //start a package
 
     Serial.printf("\r\nsending packet \"%s\" , length %d\r\n", txpacket, strlen(txpacket));
