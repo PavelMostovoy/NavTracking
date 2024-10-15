@@ -148,7 +148,6 @@ void loop() {
           GPS_DATA = false;
           continue;
         }
-        Serial.println(gps.time.second());
         if (gps.time.second() == seconds) {
           GPS_DATA = false;
           continue;
@@ -168,7 +167,7 @@ void loop() {
 
   if (lora_idle == true and GPS_DATA == true) {
     delay(random(100));
-    sprintf(txpacket, "**;%s;%s;%.6f;%.6f:%.2f **", Identifier, time_str, latitude, longitude, sog);  //start a package
+    sprintf(txpacket, "*;%s;%s;%.6f;%.6f;%.2f;*", Identifier, time_str, latitude, longitude, sog);  //start a package
 
     Serial.printf("\r\nsending packet \"%s\" , length %d\r\n", txpacket, strlen(txpacket));
 
