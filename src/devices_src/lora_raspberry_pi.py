@@ -1,6 +1,7 @@
 """
 Raspberry Pi Lora, with sx1262 board and tft screen.
 """
+
 import asyncio
 import flet as ft
 import flet.map as map
@@ -60,9 +61,11 @@ async def timer_task(page, marker):
                 try:
                     lat = float(msg[3])
                     lon = float(msg[4])
+                    sog = round(float(msg[5]),2)
                     marker.current.markers.clear()
                     marker.current.markers.append(map.Marker(
-                        content=ft.Icon(ft.icons.MY_LOCATION_SHARP),
+                        content=ft.Icon(ft.icons.MY_LOCATION_SHARP,
+                                        tooltip=ft.Tooltip(f"{sog}")),
                         coordinates=map.MapLatitudeLongitude(lat, lon),
                     ))
                 except Exception as e:
