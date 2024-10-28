@@ -1,2 +1,4 @@
 # FletProject
-Flet Project
+Navigation tracking Project
+
+Initialy POC builded with Flet(Python) framework
