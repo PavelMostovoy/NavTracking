@@ -1,10 +1,9 @@
 import datetime
 
 import flet as ft
-import uvicorn
 
-from elements.map_objects import MyMap
-from elements.controls import MySlider, MyCheckboxes, TimeSelector, DateSelector, reference_button
+from historical.python_flet.elements import MyMap
+from historical.python_flet.elements.controls import MySlider, MyCheckboxes, TimeSelector, DateSelector, reference_button
 
 
 def main(page: ft.Page):
