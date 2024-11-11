@@ -1,14 +1,13 @@
 mod database;
 mod web;
 
-
 use axum::Router;
-use axum::routing::{get};
+use axum::routing::{get, post};
 use mongodb::bson::doc;
 use mongodb::{Client, Collection};
 use tokio::net::TcpListener;
 use crate::database::{User, DB_URL, DB_USER};
-use crate::web::routes_handlers::handler;
+use crate::web::routes_handlers::{get_pwd_hash, handler};
 
 #[tokio::main]
 async fn main() {
@@ -62,6 +61,6 @@ async fn main() {
 fn app(client: Client) -> Router {
     let collection: Collection<User> = client.database("navigation").collection("users");
     Router::new().route("/", get(|| async { "API Endpoint" }))
-        .route("/auth", get(handler)).with_state(collection)
+        .route("/auth", get(handler)).with_state(collection).route("/hash", post(get_pwd_hash))
 }
 
