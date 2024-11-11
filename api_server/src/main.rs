@@ -1,28 +1,67 @@
-use axum::{
-    routing::get,
-    Router,
-};
+mod database;
+mod web;
+
+
+use axum::Router;
+use axum::routing::{get};
+use mongodb::bson::doc;
+use mongodb::{Client, Collection};
+use tokio::net::TcpListener;
+use crate::database::{User, DB_URL, DB_USER};
+use crate::web::routes_handlers::handler;
 
 #[tokio::main]
 async fn main() {
-    // build our application with a single route
-    // let app = Router::new().route("/", get(|| async { "Hello, World!" }));
+    let db_full = std::env::var("DATABASE_URL");
+    let db_pwd = std::env::var("DB_PASSWORD");
+    let db_connection_str;
+    match db_full {
+        Err(_) => {
+            match db_pwd {
+                Err(_) => {
+                    panic!("Password or DB connector not found in System Variables:")
+                }
+                Ok(value) => {
+                    db_connection_str = format!("mongodb+srv://{DB_USER}:{value}@{DB_URL}").to_string();
+                }
+            }
+        }
+        Ok(value) => {
+            db_connection_str = value;
+        }
+    }
 
-    let app = Router::new()
-        .route("/", get(root))
-        .route("/foo", get(get_foo).post(post_foo))
-        .route("/foo/bar", get(foo_bar));
+    // connecting to mongodb
+    let client;
+    match Client::with_uri_str(db_connection_str).await {
+        Err(_) => {
+            panic!("Failed to connect to Server.")
+        }
+        Ok(result) => {
+            client = result;
+        }
+    }
 
-    // run our app with hyper, listening globally on port 3000
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    // pinging the database
+    client
+        .database("navigation")
+        .run_command(doc! { "ping": 1 })
+        .await
+        .unwrap();
+    println!("Pinged your database. Successfully connected to MongoDB!");
 
-    // our router
 
-    // which calls one of these handlers
-    async fn root() -> &'static str {
-         "Hello, World!"}
-    async fn get_foo() -> &'static str  {"foo"}
-    async fn post_foo()-> &'static str {"post foo"}
-    async fn foo_bar() -> &'static str {"get bar"}
+    let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+
+    axum::serve(listener, app(client))
+        .await
+        .unwrap();
 }
+
+// main app
+fn app(client: Client) -> Router {
+    let collection: Collection<User> = client.database("navigation").collection("users");
+    Router::new().route("/", get(|| async { "API Endpoint" }))
+        .route("/auth", get(handler)).with_state(collection)
+}
+
