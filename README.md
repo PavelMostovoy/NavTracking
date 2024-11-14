@@ -17,7 +17,5 @@ Python implementation potentially will be changed to the Tauri (Rust)
 
 
 
-https://lucid.app/lucidchart/84775518-542d-40bd-9223-b9453e1d9e22/edit?viewport_loc=-1305%2C97%2C2528%2C1469%2C0_0&invitationId=inv_100c66d6-78ca-4148-adb6-4a0b88415512
-
-Overall Backend idea:
-![img.png](img.png)
+Principal structure
+![Principal diagram.png](Principal%20diagram.png)
