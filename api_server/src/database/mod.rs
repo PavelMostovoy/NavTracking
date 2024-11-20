@@ -6,8 +6,8 @@ pub const DB_USER: &str = "dbuser";
 
 #[derive(Debug, Serialize,Deserialize)]
 pub struct User{
-    _id: bson::oid::ObjectId,
-    name:String,
+    pub _id: bson::oid::ObjectId,
+    pub name:String,
     pub password:String,
 }
 
