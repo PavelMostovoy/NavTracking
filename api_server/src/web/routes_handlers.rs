@@ -36,13 +36,25 @@ pub async fn get_pwd_hash(AuthBasic((id, password)): AuthBasic, payload: Json<Us
 
 pub async fn create_user(AuthBasic((id, password)): AuthBasic, State(db): State<Collection<User>>, Json(body): Json<UserPayload>) -> Result<Json<Value>> {
     let mut hasher = DefaultHasher::new();
+    let pwd = password.unwrap_or("".parse()?);
+    pwd.hash(&mut hasher);
+    let auth_user = db.find_one(doc! {"name": id}).await;
+    match auth_user {
+        Ok(Some(user)) => {
+            if  user.password.parse::<u64>().unwrap() != hasher.finish() {
+                return Err(StatusCode::UNAUTHORIZED.into());
+            }
+        },
+        _ => {return Err(StatusCode::UNAUTHORIZED.into())}
+    }
 
     let user = db
         .find_one(doc! { "name": &body.user_name })
         .await;
 
     match user {
-        Ok(Some(user)) => Ok(
+        Ok(Some(user)) =>
+            Ok(
             Json(serde_json::json!({
         "result": {
                 "user" : &body.user_name,
@@ -50,7 +62,11 @@ pub async fn create_user(AuthBasic((id, password)): AuthBasic, State(db): State<
         }))),
 
         Ok(None) => {
+            let mut hasher = DefaultHasher::new();
             body.password.hash(&mut hasher);
+            if body.user_name.contains(char::is_whitespace){
+                return Err(StatusCode::BAD_REQUEST.into());
+            }
             let new_user = User {
                 _id: bson::oid::ObjectId::new(),
                 name: body.user_name,
