@@ -52,7 +52,6 @@ fn my_button(mut props: MapProps) -> Element {
 }
 
 
-#[component]
 fn MyMap() -> Element {
     use_effect(move || {
         const GREENWICH_MERIDIAN: (f64, f64) = (42.477806, 3.101472);
@@ -88,7 +87,7 @@ pub fn App() -> Element {
             p{"inner"}
         }
         button {onclick: move |_| {}, "Button one"},
-        // MyMap{}
+        MyMap{}
         p{"Hi There !"}
         my_button{text: "hello"}
         my_button{text: "another", size:16}
