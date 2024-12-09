@@ -2,6 +2,7 @@
 
 use dioxus::html::r#use;
 use dioxus::prelude::*;
+use dioxus_router::prelude::*;
 use dioxus_logger::tracing::{info, warn, Level};
 use gloo_utils::document;
 use leaflet::{Map, MapOptions, Marker, TileLayer};
@@ -11,6 +12,7 @@ use web_sys::{wasm_bindgen::JsCast, HtmlElement};
 struct MyContext {
     info: String,
 }
+
 
 #[derive(Props, Clone, PartialEq)]
 struct MapProps {
