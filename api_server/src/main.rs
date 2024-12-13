@@ -50,7 +50,7 @@ async fn main() {
     println!("Pinged your database. Successfully connected to MongoDB!");
 
 
-    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:3311").await.unwrap();
 
     axum::serve(listener, app(client))
         .await
