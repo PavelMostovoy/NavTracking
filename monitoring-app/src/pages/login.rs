@@ -45,38 +45,39 @@ fn PasswordField() -> Element {
 
 #[component]
 fn Submit() -> Element {
+    let mut context = use_context::<Signal<LoginInfo>>();
     let mut response = use_signal(|| String::from("..."));
 
 
     let log_in = move |_| {
         spawn(async move {
             let mut data = HashMap::new();
-            data.insert("user_name", "admin");
-            data.insert("password", "password");
 
+            data.insert("user_name", context().username);
+            data.insert("password", context().password);
 
             let client = reqwest::Client::new()
                 .post("https://api.mostovoi.org/hash")
                 .json(&data)
-                .basic_auth("admin", Some("admin123"))
+                .basic_auth(context().username, Some(context().password))
                 .send()
                 .await;
 
             match client {
                 Ok(data) => {
+
                     response.set(String::from(data.text().await.unwrap_or(String::from("nothing received"))));
+                    info!("Response : {response:?}");
+
                 }
                 Err(err) => {
-                    log::info!("Request failed with error: {err:?}")
+                    info!("Request failed with error: {err:?}")
                 }
             }
 
         }
         );
     };
-
-
-    let mut context = use_context::<Signal<LoginInfo>>();
 
     if context().username.is_empty() | context().password.is_empty() {
         rsx! {div{
@@ -86,44 +87,11 @@ fn Submit() -> Element {
     }
     }
     } else {
-        rsx! {div{
+        rsx!{div{
             button {
-            onclick: move |event| {
-                context.write().logged_in = !context().logged_in ;
-                info!("Submit button pressed : {:?}", context());
-                spawn(async move {
-                        let mut data = HashMap::new();
-                        data.insert("user_name", "admin");
-                        data.insert("password", "password");
-
-
-                        let client = reqwest::Client::new()
-                        .post("https://api.mostovoi.org/hash")
-                        .json(&data)
-                        .basic_auth("admin", Some("admin123"))
-                        .send()
-                       .await;
-
-            match client {
-                Ok(data) => {
-                     log::info!("Request successful")
-                }
-                Err(err) => {
-                    log::info!("Request failed with error: {err:?}")
-                }
-            }
-
-                    });
-
-
-            },
+            onclick: log_in,
             "Login"
-            },
-        button {onclick: post_request,
-            "Post Request"},
-
-        // button{
-        // onclick: log_in, "Response: {response}"}
+            }
     }
     }
     }
