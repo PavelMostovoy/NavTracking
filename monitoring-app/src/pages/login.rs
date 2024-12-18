@@ -20,7 +20,7 @@ fn UserNameField() -> Element {
         "Username : ",
          input { r#type: "text",
                 color: "green",
-                oninput: move |event| {context.write().username = event.value();
+                oninput: move |event| {context.write().username = event.value().to_lowercase();
                     info!("Context Value set to  : {:?}",context().username );}
             }
 
@@ -51,24 +51,24 @@ fn Submit() -> Element {
 
     let log_in = move |_| {
         spawn(async move {
-            let mut data = HashMap::new();
-
-            data.insert("user_name", context().username);
-            data.insert("password", context().password);
 
             let client = reqwest::Client::new()
-                .post("https://api.mostovoi.org/hash")
-                .json(&data)
+                .get("https://api.mostovoi.org/auth")
                 .basic_auth(context().username, Some(context().password))
                 .send()
                 .await;
 
             match client {
                 Ok(data) => {
-
-                    response.set(String::from(data.text().await.unwrap_or(String::from("nothing received"))));
-                    info!("Response : {response:?}");
-
+                    if data.status().is_success() {
+                        response.set(String::from("Logged in"));
+                        context.write().logged_in = true;
+                        info!("Response : {response:?}");
+                    }else {
+                        response.set(String::from("Not Logged in"));
+                        context.write().logged_in = false;
+                        info!("Response : {response:?}");
+                    }
                 }
                 Err(err) => {
                     info!("Request failed with error: {err:?}")
@@ -79,10 +79,10 @@ fn Submit() -> Element {
         );
     };
 
-    if context().username.is_empty() | context().password.is_empty() {
+    if context().username.is_empty() | context().password.is_empty() | context().logged_in {
         rsx! {div{
             button {disabled:true,
-            "Login"
+            if context().logged_in {"Logged"} else {"Login"}
             }
     }
     }
