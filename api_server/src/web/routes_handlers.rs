@@ -5,17 +5,30 @@ use axum::http::StatusCode;
 use axum_auth::AuthBasic;
 use serde::Deserialize;
 use serde_json::Value;
-use axum::response::{ErrorResponse, Result};
+use axum::response::{ErrorResponse, IntoResponse, Result};
 use mongodb::{bson, Collection};
 use mongodb::bson::doc;
 use crate::database::User;
 
 /// Takes basic auth details and shows a message
-pub async fn handler(AuthBasic((id, password)): AuthBasic) -> String {
-    if let Some(password) = password {
-        format!("User '{}' with password '{}'", id, password)
-    } else {
-        format!("User '{}' without password", id)
+pub async fn auth_check(AuthBasic((id, password)): AuthBasic, State(db): State<Collection<User>>) -> Result<impl IntoResponse> {
+    let mut hasher = DefaultHasher::new();
+    let pwd = password.unwrap_or("".parse().unwrap_or(String::new()));
+    pwd.hash(&mut hasher);
+
+    let user = db
+        .find_one(doc! { "name": &id })
+        .await;
+    match user {
+        Ok(Some(user)) => {
+            if user.password == hasher.finish().to_string() {
+                Ok(StatusCode::OK)
+            }
+            else{
+                 Err(StatusCode::UNAUTHORIZED.into())
+            }
+        }
+        _ => {Err(StatusCode::UNAUTHORIZED.into())}
     }
 }
 
