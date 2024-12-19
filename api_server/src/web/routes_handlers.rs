@@ -1,19 +1,44 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::time::{Duration, SystemTime};
 use axum::{Json};
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum_auth::AuthBasic;
-use serde::Deserialize;
-use serde_json::Value;
+use axum_auth::{AuthBasic, AuthBearer};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use axum::response::{ErrorResponse, IntoResponse, Result};
 use mongodb::{bson, Collection};
 use mongodb::bson::doc;
 use crate::database::User;
+use jsonwebtoken::{DecodingKey, Validation};
+const SECRET_SIGNING_KEY: &[u8] = b"keep_th1s_@_secret";
+
+#[derive(Serialize, Deserialize)]
+pub struct OurJwtPayload {
+    pub sub: String,
+    pub exp: usize,
+}
+
+impl OurJwtPayload {
+    pub fn new(sub: String) -> Self {
+        // expires by default in 60 minutes from now
+        let exp = SystemTime::now()
+            .checked_add(Duration::from_secs(60 * 60))
+            .expect("valid timestamp")
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("valid duration")
+            .as_secs() as usize;
+
+        OurJwtPayload { sub, exp }
+    }
+}
+
+
 
 /// Takes basic auth details and shows a message
-pub async fn auth_check(AuthBasic((id, password)): AuthBasic, State(db): State<Collection<User>>) -> Result<impl IntoResponse> {
+pub async fn auth_check(AuthBasic((id, password)): AuthBasic, State(db): State<Collection<User>>) -> impl IntoResponse {
     let mut hasher = DefaultHasher::new();
-    let pwd = password.unwrap_or("".parse().unwrap_or(String::new()));
+    let pwd = password.unwrap_or(String::new());
     pwd.hash(&mut hasher);
 
     let user = db
@@ -22,13 +47,25 @@ pub async fn auth_check(AuthBasic((id, password)): AuthBasic, State(db): State<C
     match user {
         Ok(Some(user)) => {
             if user.password == hasher.finish().to_string() {
-                Ok(StatusCode::OK)
+
+                let Ok(jwt) = jsonwebtoken::encode(
+                    &jsonwebtoken::Header::default(),
+                    &OurJwtPayload::new(id),
+                    &jsonwebtoken::EncodingKey::from_secret(SECRET_SIGNING_KEY),
+                ) else {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({"error": "Failed to generate token"})),
+                    );
+                };
+
+                (StatusCode::OK, Json(json!({"jwt": jwt})))
             }
             else{
-                 Err(StatusCode::UNAUTHORIZED.into())
+                (StatusCode::UNAUTHORIZED, Json(json!({"error": "Unauthorized"})))
             }
         }
-        _ => {Err(StatusCode::UNAUTHORIZED.into())}
+        _ => {(StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Internal Server Error"})))}
     }
 }
 
@@ -101,4 +138,25 @@ pub async fn create_user(AuthBasic((id, password)): AuthBasic, State(db): State<
 pub struct UserPayload {
     user_name: String,
     password: String,
+}
+
+pub async fn token_visits(AuthBearer(bearer): AuthBearer) -> impl IntoResponse {
+    let token = bearer;
+    let decoding_key = DecodingKey::from_secret(SECRET_SIGNING_KEY);
+
+    let Ok(jwt) =
+        jsonwebtoken::decode::<OurJwtPayload>(&token, &decoding_key, &Validation::default())
+    else {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "Invalid token"})),
+        );
+    };
+
+    let username = jwt.claims.sub;
+
+    (
+        StatusCode::OK,
+        Json(json!({"ok": format_args!("Visited by {username}")})),
+    )
 }
