@@ -15,12 +15,12 @@ const SECRET_SIGNING_KEY: &[u8] = b"keep_th1s_@_secret";
 
 #[derive(Serialize, Deserialize)]
 pub struct OurJwtPayload {
-    pub sub: String,
+    pub subject: String,
     pub exp: usize,
 }
 
 impl OurJwtPayload {
-    pub fn new(sub: String) -> Self {
+    pub fn new(subject: String) -> Self {
         // expires by default in 60 minutes from now
         let exp = SystemTime::now()
             .checked_add(Duration::from_secs(60 * 60))
@@ -29,7 +29,7 @@ impl OurJwtPayload {
             .expect("valid duration")
             .as_secs() as usize;
 
-        OurJwtPayload { sub, exp }
+        OurJwtPayload { subject, exp }
     }
 }
 
@@ -153,10 +153,10 @@ pub async fn token_visits(AuthBearer(bearer): AuthBearer) -> impl IntoResponse {
         );
     };
 
-    let username = jwt.claims.sub;
+    let username = jwt.claims.subject;
 
     (
         StatusCode::OK,
-        Json(json!({"ok": format_args!("Visited by {username}")})),
+        Json(json!({"ok": format_args!("Logged as {username}")})),
     )
 }
