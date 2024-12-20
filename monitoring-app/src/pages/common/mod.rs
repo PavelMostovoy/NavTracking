@@ -18,6 +18,14 @@ pub enum Route {
     Map {},
 }
 
+#[derive(Clone)]
+pub struct UserSharedStatus {
+    pub token: String,
+    pub username: String,
+    pub logged_in: bool,
+}
+
+
 #[component]
 pub fn BackToLanding() -> Element {
     let nav = use_navigator();
@@ -32,13 +40,18 @@ pub fn BackToLanding() -> Element {
 }
 }
 
+
 fn LandingPage() -> Element {
+
+    info!("Landing page");
+
     rsx! {
         h1 {"Landing Page"},
                 nav {
             ul {
                 li {
                     Link { to: Route::Login {}, "Login" }
+
                 },
                 li {
                     Link { to: Route::Details {}, "Details" }

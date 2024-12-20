@@ -1,16 +1,21 @@
 #![allow(non_snake_case)]
 
-use std::collections::HashMap;
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info};
-use crate::pages::common::BackToLanding;
+use serde::{Deserialize, Serialize};
+use crate::pages::common::{BackToLanding, UserSharedStatus};
 
 #[derive(Clone, Debug)]
 struct LoginInfo {
     username: String,
     password: String,
-    logged_in: bool,
 }
+
+#[derive(Serialize,Deserialize)]
+struct Token{
+    jwt: String,
+}
+
 
 #[component]
 fn UserNameField() -> Element {
@@ -45,8 +50,8 @@ fn PasswordField() -> Element {
 
 #[component]
 fn Submit() -> Element {
-    let mut context = use_context::<Signal<LoginInfo>>();
-    let mut response = use_signal(|| String::from("..."));
+    let context = use_context::<Signal<LoginInfo>>();
+    let mut global_context = use_context::<Signal<UserSharedStatus>>();
 
 
     let log_in = move |_| {
@@ -61,17 +66,25 @@ fn Submit() -> Element {
             match client {
                 Ok(data) => {
                     if data.status().is_success() {
-                        response.set(String::from("Logged in"));
-                        context.write().logged_in = true;
-                        info!("Response : {response:?}");
+
+                        match data.json().await{
+                            Ok(response)=>{
+                                let token: Token = response;
+                                info!("Response : {0:?}", token.jwt);
+                                global_context.write().token = token.jwt;
+                                global_context.write().username = context().username.clone();
+                                global_context.write().logged_in = true;
+
+                            }
+                            Err(e)=>{info!("Request failed: {:?}", e);}
+                        }
+
                     }else {
-                        response.set(String::from("Not Logged in"));
-                        context.write().logged_in = false;
-                        info!("Response : {response:?}");
+                        info!("Response : {0:?}", data.status());
                     }
                 }
                 Err(err) => {
-                    info!("Request failed with error: {err:?}")
+                    info!("Request failed with error: {err:?}");
                 }
             }
 
@@ -79,10 +92,10 @@ fn Submit() -> Element {
         );
     };
 
-    if context().username.is_empty() | context().password.is_empty() | context().logged_in {
+    if context().username.is_empty() | context().password.is_empty() {
         rsx! {div{
             button {disabled:true,
-            if context().logged_in {"Logged"} else {"Login"}
+            if global_context().logged_in {"Logged"} else {"Login"}
             }
     }
     }
@@ -102,7 +115,6 @@ pub fn Login() -> Element {
     use_context_provider(|| Signal::new(LoginInfo {
         username: "".to_string(),
         password: "".to_string(),
-        logged_in: false,
     }));
 
     info!("Login Page opened");
