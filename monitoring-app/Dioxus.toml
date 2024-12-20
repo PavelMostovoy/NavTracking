@@ -1,4 +1,3 @@
-
 [application]
 name = "monitoring-app-ui"
 default_platform = "web"

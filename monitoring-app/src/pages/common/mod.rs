@@ -18,7 +18,7 @@ pub enum Route {
     Map {},
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct UserSharedStatus {
     pub token: String,
     pub username: String,

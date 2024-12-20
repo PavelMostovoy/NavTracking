@@ -5,7 +5,7 @@ use dioxus_logger::tracing::{info};
 use serde::{Deserialize, Serialize};
 use crate::pages::common::{BackToLanding, UserSharedStatus};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 struct LoginInfo {
     username: String,
     password: String,
@@ -70,11 +70,10 @@ fn Submit() -> Element {
                         match data.json().await{
                             Ok(response)=>{
                                 let token: Token = response;
-                                info!("Response : {0:?}", token.jwt);
+                                info!("Token Received");
                                 global_context.write().token = token.jwt;
                                 global_context.write().username = context().username.clone();
                                 global_context.write().logged_in = true;
-
                             }
                             Err(e)=>{info!("Request failed: {:?}", e);}
                         }
@@ -92,7 +91,7 @@ fn Submit() -> Element {
         );
     };
 
-    if context().username.is_empty() | context().password.is_empty() {
+    if context().username.is_empty() | context().password.is_empty() | global_context().logged_in {
         rsx! {div{
             button {disabled:true,
             if global_context().logged_in {"Logged"} else {"Login"}
