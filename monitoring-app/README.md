@@ -8,8 +8,9 @@ This template should help get you started developing with Tauri and Dioxus.
 
     cargo install create-tauri-app --locked
 
+    cargo install tauri-cli     
 
-    cargo install dioxus-cli
+    cargo install dioxus-cli@0.5.6
 
 Run dev version:
 
