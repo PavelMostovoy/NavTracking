@@ -1,5 +1,5 @@
 
-
+#include <TimeLib.h>
 #include "LoRaWan_APP.h"
 #include "Arduino.h"
 #include "HT_st7735.h"
@@ -51,22 +51,31 @@ uint8_t confirmedNbTrials = 4;
 static void prepareTxFrame(uint8_t port) {
 
   float lat, lon, alt, course, speed, hdop, sats;
+  uint32_t timestamp;
 
   Serial.println("Waiting for GPS FIX ...");
   st7735.st7735_write_str(0, 0, "GPS Fix vait");
 
   while (!GPS.location.isUpdated() || !GPS.location.isValid()) {
-          if (Serial1.available()) {
-        GPS.encode(Serial1.read());
-      }
+    if (Serial1.available()) {
+      GPS.encode(Serial1.read());
+    }
   }
 
   st7735.st7735_write_str(0, 0, "Ready to Send");
 
-  st7735.st7735_fill_screen(ST7735_BLACK);
   lat = GPS.location.lat();
   lon = GPS.location.lng();
-  uint32_t timestamp = GPS.time.value();
+
+  int year = GPS.date.year();
+  int month = GPS.date.month();
+  int day = GPS.date.day();
+  int hour = GPS.time.hour();
+  int minute = GPS.time.minute();
+  int second = GPS.time.second();
+
+  setTime(hour, minute, second, day, month, year);
+  timestamp = now();
 
   unsigned char *puc;
 
@@ -89,6 +98,8 @@ static void prepareTxFrame(uint8_t port) {
   appData[appDataSize++] = puc[2];
   appData[appDataSize++] = puc[3];
 
+  Serial.print(", Time: ");
+  Serial.print(timestamp);
   Serial.print(", LAT: ");
   Serial.print(GPS.location.lat(), 6);
   Serial.print(", LON: ");
@@ -154,8 +165,6 @@ void setup() {
       delay(100);
       continue;
     }
-
-
   }
 
   st7735.st7735_init();
@@ -177,7 +186,7 @@ void loop() {
     case DEVICE_STATE_JOIN:
       {
         LoRaWAN.join();
-        st7735.st7735_write_str(0, 0, "join>");
+        st7735.st7735_write_str(0, 0, "join");
 
         break;
       }
