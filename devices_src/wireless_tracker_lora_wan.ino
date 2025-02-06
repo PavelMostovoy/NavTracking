@@ -75,10 +75,18 @@ static void prepareTxFrame(uint8_t port) {
 
   lat = GPS.location.lat();
   lon = GPS.location.lng();
+  uint32_t timestamp = GPS.time.value();
 
   unsigned char *puc;
 
   appDataSize = 0;
+
+  puc = (unsigned char *)(&timestamp);
+  appData[appDataSize++] = puc[0];
+  appData[appDataSize++] = puc[1];
+  appData[appDataSize++] = puc[2];
+  appData[appDataSize++] = puc[3];
+
   puc = (unsigned char *)(&lat);
   appData[appDataSize++] = puc[0];
   appData[appDataSize++] = puc[1];
