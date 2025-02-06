@@ -28,7 +28,7 @@ uint16_t userChannelsMask[6] = { 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 
 LoRaMacRegion_t loraWanRegion = ACTIVE_REGION;
 
 /*LoraWan Class, Class A and Class C are supported*/
-DeviceClass_t loraWanClass = CLASS_A;
+DeviceClass_t loraWanClass = CLASS_C;
 
 /*the application data transmission duty cycle.  value in [ms].*/
 uint32_t appTxDutyCycle = 5000;
@@ -53,26 +53,17 @@ static void prepareTxFrame(uint8_t port) {
   float lat, lon, alt, course, speed, hdop, sats;
 
   Serial.println("Waiting for GPS FIX ...");
-  st7735.st7735_fill_screen(ST7735_BLACK);
   st7735.st7735_write_str(0, 0, "GPS Fix vait");
 
-  while (!GPS.location.isValid()) {
-    // Serial.println("entrering loop");
-
-    uint32_t start = millis();
-    do {
-      if (Serial1.available()) {
+  while (!GPS.location.isUpdated() || !GPS.location.isValid()) {
+          if (Serial1.available()) {
         GPS.encode(Serial1.read());
       }
-    } while (GPS.charsProcessed() < 10);  //((millis() + start) <5000);
-
-    if ((millis() - start) > 1000)  // && GPS.charsProcessed() < 10)
-    {
-      Serial.println("No GPS data received: check wiring");
-      break;
-    }
   }
 
+  st7735.st7735_write_str(0, 0, "Ready to Send");
+
+  st7735.st7735_fill_screen(ST7735_BLACK);
   lat = GPS.location.lat();
   lon = GPS.location.lng();
   uint32_t timestamp = GPS.time.value();
@@ -99,9 +90,10 @@ static void prepareTxFrame(uint8_t port) {
   appData[appDataSize++] = puc[3];
 
   Serial.print(", LAT: ");
-  Serial.print(GPS.location.lat(),6);
+  Serial.print(GPS.location.lat(), 6);
   Serial.print(", LON: ");
-  Serial.print(GPS.location.lng(),6);
+  Serial.print(GPS.location.lng(), 6);
+  Serial.println();
 }
 
 
@@ -121,6 +113,18 @@ void setup() {
   Serial.println("Started");
 
   delay(1000);
+
+  while (true) {
+    if (Serial1.available()) {
+      // set 10Hz
+      Serial1.println("$CFGNAV,100,100,1000");
+      // Serial1.println("$CFGNAV,1000,1000,1000");
+      break;
+    } else {
+      sleep(100);
+      continue;
+    }
+  }
 
   while (true) {
 
@@ -157,7 +161,6 @@ void setup() {
   st7735.st7735_init();
 
   st7735.st7735_fill_screen(ST7735_BLACK);
-
 }
 void loop() {
   switch (deviceState) {
@@ -174,17 +177,17 @@ void loop() {
     case DEVICE_STATE_JOIN:
       {
         LoRaWAN.join();
-        st7735.st7735_write_str(0, 0, "join>>>");
+        st7735.st7735_write_str(0, 0, "join>");
 
         break;
       }
     case DEVICE_STATE_SEND:
       {
         prepareTxFrame(appPort);
-        st7735.st7735_write_str(0, 0, "send>>>");
+        st7735.st7735_write_str(0, 0, "send");
 
         LoRaWAN.send();
-        st7735.st7735_write_str(0, 0, "send>>>    ok");
+        st7735.st7735_write_str(0, 0, "send  ok");
 
 
         deviceState = DEVICE_STATE_CYCLE;
@@ -195,12 +198,11 @@ void loop() {
         txDutyCycleTime = appTxDutyCycle + randr(-APP_TX_DUTYCYCLE_RND, APP_TX_DUTYCYCLE_RND);
         LoRaWAN.cycle(txDutyCycleTime);
         deviceState = DEVICE_STATE_SLEEP;
-        //  deviceState = DEVICE_STATE_SEND;
         break;
       }
     case DEVICE_STATE_SLEEP:
       {
-        st7735.st7735_write_str(0, 0, "sleep");
+        st7735.st7735_write_str(0, 0, "Sleep");
         LoRaWAN.sleep(loraWanClass);
         break;
       }
