@@ -34,3 +34,11 @@ pub struct Location {
     sog:f32,
     location: GeoData<f32>,
 }
+
+#[derive(Debug, Serialize,Deserialize)]
+pub(crate) struct TrackerGeoData{
+    pub(crate) name:String,
+    pub(crate) timestamp:u32,
+    pub(crate) latitude:i32,
+    pub(crate) longitude:i32,
+}
