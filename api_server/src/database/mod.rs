@@ -42,3 +42,10 @@ pub(crate) struct TrackerGeoData{
     pub(crate) latitude:i32,
     pub(crate) longitude:i32,
 }
+
+#[derive(Debug, Serialize,Deserialize)]
+pub(crate) struct SimplifiedData{
+    pub(crate) lat: i32,
+    pub(crate) lon: i32,
+    pub(crate) time: u32,
+}

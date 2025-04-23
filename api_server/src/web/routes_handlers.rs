@@ -1,4 +1,4 @@
-use crate::database::{TrackerGeoData, User};
+use crate::database::{SimplifiedData, TrackerGeoData, User};
 use crate::lora_data::payload::UplinkPayload;
 use crate::parsers::{string_to_data, string_to_timestamp};
 use axum::extract::State;
@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::{Duration, SystemTime};
+use futures::stream::TryStreamExt as _;
 
 const SECRET_SIGNING_KEY: &[u8] = b"keep_th1s_@_secret";
 const SECRET_LORA_KEY: &str = "ZFj6GzdbLoLT3v2shaVq5iroGViEHglsx3pjXCc2eDbIgOib6sZrwF0q8ibxBIDS";
@@ -149,6 +150,13 @@ pub struct UserPayload {
     password: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub(crate) struct TrackerPayload {
+    tracker_id: String,
+    tracker_name: String
+}
+
+
 pub async fn token_visits(AuthBearer(bearer): AuthBearer) -> impl IntoResponse {
     let token = bearer;
     let decoding_key = DecodingKey::from_secret(SECRET_SIGNING_KEY);
@@ -175,8 +183,7 @@ pub async fn handle_uplink(
     State(db): State<Database>,
     Json(payload): Json<UplinkPayload>,
 ) -> Json<Value> {
-
-    if bearer != SECRET_LORA_KEY{
+    if bearer != SECRET_LORA_KEY {
         return Json(json!({"error": "Authorization Error"}));
     }
     // match payload.f_cnt {
@@ -230,4 +237,61 @@ pub async fn handle_uplink(
         "status": "success",
         "message": "Uplink lora_data received"
     }))
+}
+
+
+pub async fn get_single_track(
+    State(db): State<Database>,
+    payload: Result<Json<TrackerPayload>, axum::extract::rejection::JsonRejection>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let Json(data) = payload.map_err(|err| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "Bad request "})),
+            // Json(json!({ "error": format!("Invalid JSON :{err} ") })),
+        )
+    })?;
+
+    let table_name = data.tracker_id;
+    let tracker_name = data.tracker_name;
+
+    let collection: Collection<TrackerGeoData> = db.collection(&table_name);
+
+    let mut cursor = collection
+        .find(doc! {"name": &tracker_name})
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "Collection or document not found" })),
+            )
+        })?;
+
+    let mut tracker_data = Vec::new();
+
+    while let Some(record) = cursor
+        .try_next()
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "Failed to parse database response" })),
+            )
+        })?
+    {
+        tracker_data.push(SimplifiedData {
+            lat: record.latitude,
+            lon: record.longitude,
+            time: record.timestamp,
+        });
+    }
+
+    let body = json!({
+        "result": {
+            "tracker_name": tracker_name,
+            "data": tracker_data
+        }
+    });
+
+    Ok((StatusCode::OK, Json(body)))
 }
