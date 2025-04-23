@@ -1,0 +1,33 @@
+[package]
+name = "monitoring-app"
+version = "0.1.0"
+authors = ["pmostovoi"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dioxus = { version = "0.6.3", features = ["router"] }
+dioxus-logger = "0.6.2"
+serde = { version = "1.0.217", features = ["derive"] }
+reqwest = { version = "0.12.12",default-features = false, features = ["json", "rustls-tls"] }
+web-sys = "0.3.77"
+
+
+[features]
+default = ["desktop"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
