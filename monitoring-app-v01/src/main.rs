@@ -1,5 +1,6 @@
 mod pages;
 mod utils;
+mod components;
 
 use pages::Route;
 use dioxus::prelude::*;
@@ -14,7 +15,7 @@ pub struct TrackerResponse {
 #[derive(Debug, Deserialize, Clone)]
 pub struct TrackerResult {
     pub tracker_name: String,
-    pub data: Vec<crate::pages::selector::SimplifiedData>,
+    pub data: Vec<utils::SimplifiedData>,
 }
 
 #[derive(Debug,Serialize, Clone)]
