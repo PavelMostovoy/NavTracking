@@ -63,6 +63,7 @@ pub fn DropdownSelector() -> Element {
                     value: "",
                     disabled: true,
                     hidden: true,
+                     selected: selected_tracker.read().tracker_id.is_empty(),
                     "Select a tracker..."
                 }
                 for (id, name) in options.iter() {
