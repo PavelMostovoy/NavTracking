@@ -1,7 +1,0 @@
-flet
-PyYAML
-pynmeagps
-fastapi[standard]
-uvicorn
-geopy
-sqlalchemy
