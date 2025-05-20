@@ -2,7 +2,7 @@
 Navigation tracking Project
 
 Initially POC built with Flet(Python) framework
-Python implementation potentially will be changed to the Tauri (Rust)
+Python implementation potentially will be changed to the Dioxus (Rust)
 
 # Structure:
 * /devices_src - code for the devices that could be used in project
