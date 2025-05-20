@@ -38,9 +38,9 @@ pub struct SelectedDate {
     pub date: NaiveDate,
 }
 
-const FAVICON: Asset = asset!("/assets/favicon.ico");
-const MAIN_CSS: Asset = asset!("/assets/main.css");
-const HEADER_SVG: Asset = asset!("/assets/header.svg");
+const FAVICON: Asset = asset!("static/assets/favicon.ico");
+const MAIN_CSS: Asset = asset!("static/assets/main.css");
+const CONFIG_TOML: &str = include_str!("../config.toml");
 
 fn main() {
     dioxus::launch(App);

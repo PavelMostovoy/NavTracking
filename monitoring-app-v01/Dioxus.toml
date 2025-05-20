@@ -1,5 +1,9 @@
 [application]
 
+[bundle]
+identifier = "com.mostovoi"
+publisher = "PMostovoi"
+
 [web.app]
 
 # HTML title tag content

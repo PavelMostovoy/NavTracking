@@ -1,10 +1,11 @@
 use crate::utils::{average_geographic_position, Coordinate};
-use crate::TrackerResponse;
+use crate::{TrackerResponse};
 use dioxus::prelude::*;
 use std::fs;
 
 #[component]
 pub(crate) fn MyMap(id: i32) -> Element {
+    let mut html = include_str!("../../static/assets/map_template.html").to_string();
     let context = use_context::<Signal<TrackerResponse>>();
     let tracker_data = context.read().clone();
 
@@ -38,14 +39,11 @@ pub(crate) fn MyMap(id: i32) -> Element {
             .collect::<Vec<_>>()
             .join("\n");
 
-        let mut html =
-            fs::read_to_string("assets/map_template.html").expect("can't read map template");
-
         html = html.replace("<!--START_LAT-->", &latitude.to_string());
         html = html.replace("<!--START_LON-->", &longitude.to_string());
         html = html.replace("<!--MARKERS-->", &marker_js);
 
-        html
+        html.clone()
     });
 
     rsx! {

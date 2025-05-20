@@ -1,22 +1,19 @@
-name: Rust
+stages:
+  - build
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+build-macos-windows:
+  stage: build
+  image: rust:latest
+  before_script:
+    - cargo install dioxus-cli --force
 
-env:
-  CARGO_TERM_COLOR: always
 
-jobs:
-  build:
+    - rustup target add x86_64-pc-windows-gnu
+    - rustup target add x86_64-apple-darwin || true
 
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+  script:
+    - echo "Building Dioxus project"
+    - dx bundle --release
+  artifacts:
+    paths:
+      - dist/
