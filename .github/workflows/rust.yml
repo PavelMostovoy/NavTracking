@@ -20,7 +20,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: subproject
+        working-directory: monitoring-app-v01
 
     steps:
       - uses: actions/checkout@v4
