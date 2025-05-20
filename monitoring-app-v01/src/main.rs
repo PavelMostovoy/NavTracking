@@ -1,6 +1,7 @@
 mod pages;
 mod utils;
 mod components;
+mod config;
 
 use pages::Route;
 use dioxus::prelude::*;

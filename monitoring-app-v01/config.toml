@@ -1,0 +1,5 @@
+[default]
+tracker_api_url = "https://api.mostovoi.org"
+
+[development]
+tracker_api_url = "http://0.0.0.0:3311"

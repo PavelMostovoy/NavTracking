@@ -6,6 +6,7 @@ use axum::http::StatusCode;
 use axum::response::{ErrorResponse, IntoResponse, Result};
 use axum::Json;
 use axum_auth::{AuthBasic, AuthBearer};
+use futures::stream::TryStreamExt as _;
 use jsonwebtoken::{DecodingKey, Validation};
 use mongodb::bson::doc;
 use mongodb::{bson, Collection, Database};
@@ -13,7 +14,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::{Duration, SystemTime};
-use futures::stream::TryStreamExt as _;
 
 const SECRET_SIGNING_KEY: &[u8] = b"keep_th1s_@_secret";
 const SECRET_LORA_KEY: &str = "ZFj6GzdbLoLT3v2shaVq5iroGViEHglsx3pjXCc2eDbIgOib6sZrwF0q8ibxBIDS";
@@ -153,9 +153,10 @@ pub struct UserPayload {
 #[derive(Debug, Deserialize)]
 pub(crate) struct TrackerPayload {
     tracker_id: String,
-    tracker_name: String
+    tracker_name: String,
+    start_time: i64,
+    end_time: i64,
 }
-
 
 pub async fn token_visits(AuthBearer(bearer): AuthBearer) -> impl IntoResponse {
     let token = bearer;
@@ -239,7 +240,6 @@ pub async fn handle_uplink(
     }))
 }
 
-
 pub async fn get_single_track(
     State(db): State<Database>,
     payload: Result<Json<TrackerPayload>, axum::extract::rejection::JsonRejection>,
@@ -254,11 +254,17 @@ pub async fn get_single_track(
 
     let table_name = data.tracker_id;
     let tracker_name = data.tracker_name;
-
+    let start_time = data.start_time;
+    let end_time = data.end_time;
+    
     let collection: Collection<TrackerGeoData> = db.collection(&table_name);
 
     let mut cursor = collection
-        .find(doc! {"name": &tracker_name})
+        .find(doc! {"name": &tracker_name,
+            "timestamp": {
+                "$gte": start_time,
+                "$lte": end_time}
+        })
         .await
         .map_err(|_| {
             (

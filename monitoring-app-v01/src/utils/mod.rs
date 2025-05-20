@@ -1,7 +1,10 @@
 use chrono::{NaiveDate, TimeZone, Utc};
+use config::ValueKind::String;
 use reqwest::Client;
 use serde::Deserialize;
 use crate::{TrackerPayload, TrackerResponse};
+use crate::config::Settings;
+
 
 #[derive(Debug, Clone)]
 pub(crate) struct Coordinate {
@@ -35,9 +38,11 @@ pub fn date_to_unix_range(date: NaiveDate) -> Option<(i64, i64)> {
 pub async fn send_tracker_request(
     tracker_payload: TrackerPayload,
 ) -> Result<TrackerResponse, reqwest::Error> {
+    let config = Settings::load();
     let client = Client::new();
+    let endpoint = format!("{}/get_single_track", config.tracker_api_url);
     let res = client
-        .post("https://api.mostovoi.org/get_single_track")
+        .post(endpoint)
         .json(&tracker_payload)
         .send()
         .await?;
