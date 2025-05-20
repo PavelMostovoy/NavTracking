@@ -1,19 +1,42 @@
-stages:
-  - build
+name: Build Rust Binaries (macOS + Windows)
 
-build-macos-windows:
-  stage: build
-  image: rust:latest
-  before_script:
-    - cargo install dioxus-cli --force
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
+env:
+  CARGO_TERM_COLOR: always
 
-    - rustup target add x86_64-pc-windows-gnu
-    - rustup target add x86_64-apple-darwin || true
+jobs:
+  build:
+    name: Build for ${{ matrix.target }}
+    runs-on: ubuntu-latest
 
-  script:
-    - echo "Building Dioxus project"
-    - dx bundle --release
-  artifacts:
-    paths:
-      - dist/
+    strategy:
+      matrix:
+        target: [x86_64-apple-darwin, x86_64-pc-windows-gnu]
+
+    defaults:
+      run:
+        working-directory: subproject
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Install mingw for Windows
+        if: matrix.target == 'x86_64-pc-windows-gnu'
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64
+
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target }}
+          path: subproject/target/${{ matrix.target }}/release/
