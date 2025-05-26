@@ -1,3 +1,4 @@
+use dioxus::html::completions::CompleteWithBraces::option;
 use dioxus::prelude::*;
 use crate::components::{date_selector::DateSelector, dropdown::DropdownSelector};
 
@@ -8,7 +9,10 @@ pub(crate) fn Selector(id: i32) -> Element {
             id: "selector",
             h3 { "Tracker and Data selection" }
             div {
-                DropdownSelector {}
+                DropdownSelector{ index: 0}
+                DropdownSelector{ index: 1}
+            }
+            div{
             }
             div{
                 DateSelector {}

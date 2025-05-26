@@ -1,3 +1,4 @@
+
 mod pages;
 mod utils;
 mod components;
@@ -8,9 +9,25 @@ use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
 use chrono::{Local, NaiveDate};
 
+pub static TRACKER_OPTIONS: &[(&str, &str)] = &[
+    ("70b3d57ed00653c8", "FRAxxxx"),
+    ("70b3d57ed00653c7", "FRA2455"),
+];
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct TrackerResponse {
     pub result: TrackerResult,
+}
+
+impl Default for TrackerResponse {
+    fn default() -> Self {
+        TrackerResponse {
+            result: TrackerResult {
+                tracker_name: "".to_string(),
+                data: vec![]
+            }
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -29,8 +46,8 @@ struct TrackerPayload {
 
 #[derive(Debug, Clone)]
 pub struct SelectedTracker {
-    tracker_name: String,
     tracker_id: String,
+    data: TrackerResponse,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -51,8 +68,16 @@ fn App() -> Element {
     use_context_provider(|| Signal::new(
         TrackerResponse{ result: TrackerResult{ tracker_name: "".to_string(), data: vec![] }}
     ));
-    use_context_provider(|| Signal::new( 
-        SelectedTracker{ tracker_name: "".to_string(), tracker_id: "".to_string() }));
+    use_context_provider(|| Signal::new( vec![
+        SelectedTracker { 
+            tracker_id: "".to_string(),
+            data: TrackerResponse::default()
+        },
+        SelectedTracker {
+            tracker_id: "".to_string(),
+            data: TrackerResponse::default()
+        },
+    ]));
 
     use_context_provider(|| Signal::new(
         SelectedDate{ date: Local::now().date_naive()}));

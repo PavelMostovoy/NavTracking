@@ -1,21 +1,37 @@
-use crate::utils::{average_geographic_position, Coordinate};
-use crate::{TrackerResponse};
+use crate::utils::{average_geographic_position, Coordinate, SimplifiedData};
+use crate::{utils, SelectedTracker, TrackerResponse};
 use dioxus::prelude::*;
 use std::fs;
 
 #[component]
 pub(crate) fn MyMap(id: i32) -> Element {
     let mut html = include_str!("../../static/assets/map_template.html").to_string();
-    let context = use_context::<Signal<TrackerResponse>>();
-    let tracker_data = context.read().clone();
-
+    let trackers = use_context::<Signal<Vec<SelectedTracker>>>();
     let mut slider_value = use_signal(|| 0);
+    
+    let mut results_data: Vec<SimplifiedData>  = Vec::new();
+    let mut color = "green";
+    for (index, tracker) in trackers.read().clone().iter().enumerate() {
+        
+        if (tracker.tracker_id != ""){
+            println!("Tracker id: {} tracker Data: {:?}",tracker.tracker_id, tracker.data);
+            results_data = tracker.data.result.data.clone();
+            if index == 0 {
+                color = "blue";
+            }
+            if index == 1 {
+                color = "red";
+            }
+        }
+        
+    }
+    
 
     let memo_html = use_memo(move || {
         let mut markers = vec![];
         let mut coordinates = vec![];
 
-        for coord in tracker_data.result.data.iter() {
+        for coord in results_data.iter() {
             let coordinate = Coordinate {
                 lat: (coord.lat as f32) / 1000000.0,
                 lon: (coord.lon as f32) / 1000000.0,
@@ -33,7 +49,7 @@ pub(crate) fn MyMap(id: i32) -> Element {
             .iter()
             .map(|(lat, lon, name)| {
                 format!(
-                    r#"L.circleMarker([{lat}, {lon}], {{radius: 2, color: 'blue'}} ).addTo(map).bindPopup("{name}");"#,
+                    r#"L.circleMarker([{lat}, {lon}], {{radius: 2, color: '{color}'}} ).addTo(map).bindPopup("{name}");"#,
                 )
             })
             .collect::<Vec<_>>()
