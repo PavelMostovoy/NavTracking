@@ -12,6 +12,13 @@ pub(crate) struct Coordinate {
 }
 
 pub(crate) fn average_geographic_position(coords: Vec<Coordinate>) -> Coordinate {
+    if coords.is_empty() {
+        return Coordinate {
+            lat: 42.7,
+            lon: 3.03,
+        };
+    }
+
     let (sum_lat, sum_lon) = coords.iter().fold((0.0, 0.0), |(sum_lat, sum_lon), coord| {
         (sum_lat + coord.lat, sum_lon + coord.lon)
     });

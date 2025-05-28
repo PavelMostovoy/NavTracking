@@ -34,8 +34,7 @@
 <div id="map"></div>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const map = L.map('map').setView([<!--START_LAT-->, <!--START_LON-->], 13);
-
+       // plugin options section
         const options = {
             position: 'topleft',        // Leaflet control position option
             circleMarker: {               // Leaflet circle marker options for points used in this plugin
@@ -59,12 +58,15 @@
                 label: 'Bearing:'
             }
         };
+        // map creation section
+        const map = L.map('map').setView([<!--START_LAT-->, <!--START_LON-->], 13);
         L.control.ruler(options).addTo(map);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19
         }).addTo(map);
 
-        <!--MARKERS-->
+        <!--BLUE_MARKERS-->
+        <!--RED_MARKERS-->
     });
 </script>
 </body>
