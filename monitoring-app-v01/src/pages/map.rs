@@ -1,7 +1,6 @@
-use crate::utils::{average_geographic_position, Coordinate, SimplifiedData};
-use crate::{utils, SelectedTracker, TrackerResponse};
+use crate::utils::{average_geographic_position, Coordinate};
+use crate::{SelectedTracker, DEFAULT_SELECTOR};
 use dioxus::prelude::*;
-use std::fs;
 
 #[component]
 pub(crate) fn MyMap(id: i32) -> Element {
@@ -19,7 +18,7 @@ pub(crate) fn MyMap(id: i32) -> Element {
         let mut all_coordinates = vec![];
 
         for (index, tracker) in trackers_data.iter().enumerate() {
-            if !tracker.tracker_id.is_empty() {
+            if !tracker.tracker_id.is_empty() && tracker.tracker_id != DEFAULT_SELECTOR {
                 println!(
                     "Tracker id: {} tracker Data: {:?}",
                     tracker.tracker_id, tracker.data
