@@ -9,6 +9,8 @@ use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
 use chrono::{Local, NaiveDate};
 
+const DEFAULT_SELECTOR: &str = "Not Selected ...";
+
 pub static TRACKER_OPTIONS: &[(&str, &str)] = &[
     ("70b3d57ed00653c8", "FRAxxxx"),
     ("70b3d57ed00653c7", "FRA2455"),
@@ -65,9 +67,7 @@ fn main() {
 
 #[component]
 fn App() -> Element {
-    use_context_provider(|| Signal::new(
-        TrackerResponse{ result: TrackerResult{ tracker_name: "".to_string(), data: vec![] }}
-    ));
+
     use_context_provider(|| Signal::new( vec![
         SelectedTracker { 
             tracker_id: "".to_string(),
