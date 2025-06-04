@@ -1,14 +1,15 @@
 use crate::utils::{average_geographic_position, Coordinate};
-use crate::{SelectedTracker, DEFAULT_SELECTOR};
+use crate::{SelectedTracker, SliderValue, DEFAULT_SELECTOR};
 use dioxus::prelude::*;
 
 #[component]
 pub(crate) fn MyMap(id: i32) -> Element {
     let trackers = use_context::<Signal<Vec<SelectedTracker>>>();
-    let mut slider_value = use_signal(|| 0);
+    let mut slider_value = use_context::<Signal<SliderValue>>();
 
     let memo_html = use_memo(move || {
         let trackers_data = trackers.read();
+        let current_slider_value = slider_value.read().value;
 
         let mut html = include_str!("../../static/assets/map_template.html").to_string();
 
@@ -30,9 +31,9 @@ pub(crate) fn MyMap(id: i32) -> Element {
                         lon: (coord.lon as f32) / 1000000.0,
                     };
                     all_coordinates.push(coordinate.clone());
-                    
+
                     let marker = (coordinate.lat, coordinate.lon, tracker.tracker_id.as_str());
-                    
+
                     if index == 0 {
                         blue_markers.push(marker);
                     }
@@ -63,38 +64,39 @@ pub(crate) fn MyMap(id: i32) -> Element {
     });
 
     rsx! {
-        div {
-            iframe {
-                width: "800",
-                height: "600",
-                srcdoc: "{memo_html}",
-                style: "flex: 1;\
-                    width: 100%;\
-                    border: none;",
-            }
-
             div {
-                style: "margin-top: 20px;",
-                label { "Slider (placeholder):" }
-                input {
-                    r#type: "range",
-                    min: "0",
-                    max: "100",
-                    value: "{slider_value}",
-                    style: "width: 100%;",
-                    oninput: move |evt| {
-                        if let Ok(val) = evt.value().parse::<i32>() {
-                            slider_value.set(val);
-                            println!("Slider moved to: {val}");
+                iframe {
+                    width: "1024",
+                    height: "768",
+                    srcdoc: "{memo_html}",
+                    style: "flex: 1;\
+                        width: 100%;\
+                        border: none;",
+                }
+
+                div {
+                    style: "margin-top: 20px;",
+                    label { "Slider (placeholder):" }
+                    input {
+                        r#type: "range",
+                        min: "0",
+                        max: "100",
+                        value: "{slider_value.read().value}",
+                        style: "width: 100%;",
+                        oninput: move |evt| {
+                            if let Ok(val) = evt.value().parse::<i32>() {
+                                let sl_value = SliderValue{value:val};
+                                slider_value.set(sl_value);
+                                println!("Slider moved to: {val}");
+                            }
                         }
                     }
-                }
-                p {
-                    "Current slider value: {slider_value}"
+                   p {
+        "Current slider value: {slider_value.read().value}"
+    }
                 }
             }
         }
-    }
 }
 
 fn generate_markers(coordinates: Vec<(f32, f32, &str)>, color: &str) -> String {

@@ -10,7 +10,7 @@ use mongodb::{Client, Collection, Database};
 use tokio::net::TcpListener;
 use std::net::SocketAddr;
 use crate::database::{User, DB_URL, DB_USER};
-use crate::web::routes_handlers::{create_user, get_pwd_hash, auth_check, token_visits, handle_uplink, get_single_track};
+use crate::web::routes_handlers::{create_user, get_pwd_hash, auth_check, token_visits, handle_uplink, get_single_track, get_last_positions};
 
 #[tokio::main]
 async fn main() {
@@ -74,6 +74,7 @@ fn app(client: Client) -> Router {
         .route("/token", post(token_visits))
         .route("/user/create", post(create_user)).with_state(users)
         .route("/lora", post(handle_uplink)).with_state(db_connector)
-        .route("/get_single_track", post(get_single_track)).with_state(db_connector_1)
+        .route("/get_single_track", post(get_single_track)).with_state(db_connector_1.clone())
+        .route("/get_last_positions/{count}", post(get_last_positions)).with_state(db_connector_1)
 }
 

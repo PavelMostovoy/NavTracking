@@ -41,12 +41,28 @@ pub fn date_to_unix_range(date: NaiveDate) -> Option<(i64, i64)> {
 }
 
 
+// pub async fn send_tracker_request(
+//     tracker_payload: TrackerPayload,
+// ) -> Result<TrackerResponse, reqwest::Error> {
+//     let config = Settings::load();
+//     let client = Client::new();
+//     let endpoint = format!("{}/get_single_track", config.tracker_api_url);
+//     let res = client
+//         .post(endpoint)
+//         .json(&tracker_payload)
+//         .send()
+//         .await?;
+// 
+//     let tracker_data = res.json::<TrackerResponse>().await?;
+//     Ok(tracker_data)
+// }
 pub async fn send_tracker_request(
     tracker_payload: TrackerPayload,
+    amount: i64
 ) -> Result<TrackerResponse, reqwest::Error> {
     let config = Settings::load();
     let client = Client::new();
-    let endpoint = format!("{}/get_single_track", config.tracker_api_url);
+    let endpoint = format!("{}/get_last_positions/{}", config.tracker_api_url, amount);
     let res = client
         .post(endpoint)
         .json(&tracker_payload)
@@ -56,6 +72,7 @@ pub async fn send_tracker_request(
     let tracker_data = res.json::<TrackerResponse>().await?;
     Ok(tracker_data)
 }
+
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct SimplifiedData {

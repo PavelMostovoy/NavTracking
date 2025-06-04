@@ -1,7 +1,7 @@
 use crate::database::{SimplifiedData, TrackerGeoData, User};
 use crate::lora_data::payload::UplinkPayload;
 use crate::parsers::{string_to_data, string_to_timestamp};
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{ErrorResponse, IntoResponse, Result};
 use axum::Json;
@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::{Duration, SystemTime};
+use mongodb::options::FindOptions;
 
 const SECRET_SIGNING_KEY: &[u8] = b"keep_th1s_@_secret";
 const SECRET_LORA_KEY: &str = "ZFj6GzdbLoLT3v2shaVq5iroGViEHglsx3pjXCc2eDbIgOib6sZrwF0q8ibxBIDS";
@@ -265,6 +266,73 @@ pub async fn get_single_track(
                 "$gte": start_time,
                 "$lte": end_time}
         })
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "Collection or document not found" })),
+            )
+        })?;
+
+    let mut tracker_data = Vec::new();
+
+    while let Some(record) = cursor
+        .try_next()
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "Failed to parse database response" })),
+            )
+        })?
+    {
+        tracker_data.push(SimplifiedData {
+            lat: record.latitude,
+            lon: record.longitude,
+            time: record.timestamp,
+        });
+    }
+
+    let body = json!({
+        "result": {
+            "tracker_name": tracker_name,
+            "data": tracker_data
+        }
+    });
+
+    Ok((StatusCode::OK, Json(body)))
+}
+
+
+
+pub async fn get_last_positions(
+    Path(count): Path<i64>,
+    State(db): State<Database>,
+    payload: Result<Json<TrackerPayload>, axum::extract::rejection::JsonRejection>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let Json(data) = payload.map_err(|err| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "Bad request "})),
+            // Json(json!({ "error": format!("Invalid JSON :{err} ") })),
+        )
+    })?;
+
+    let table_name = data.tracker_id;
+    let tracker_name = data.tracker_name;
+
+    // let filter = doc! { "name": tracker_name };
+    let find_options = FindOptions::builder()
+        .sort(doc! { "timestamp": -1 })
+        .limit(count)
+        .build();
+    
+    let collection: Collection<TrackerGeoData> = db.collection(&table_name);
+    
+    let mut cursor = collection
+        .find(doc! {"name": &tracker_name})
+        .sort(doc! { "timestamp": -1 })
+        .limit(count as i64)
         .await
         .map_err(|_| {
             (

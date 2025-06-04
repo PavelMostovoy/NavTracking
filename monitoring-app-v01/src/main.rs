@@ -57,6 +57,10 @@ pub struct SelectedDate {
     pub date: NaiveDate,
 }
 
+struct SliderValue {
+    value: i32
+}
+
 const FAVICON: Asset = asset!("static/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("static/assets/main.css");
 const CONFIG_TOML: &str = include_str!("../config.toml");
@@ -81,6 +85,9 @@ fn App() -> Element {
 
     use_context_provider(|| Signal::new(
         SelectedDate{ date: Local::now().date_naive()}));
+
+    use_context_provider(|| Signal::new(
+        SliderValue{ value: 1 }));
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
