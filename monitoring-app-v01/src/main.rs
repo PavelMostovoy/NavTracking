@@ -42,8 +42,12 @@ pub struct TrackerResult {
 struct TrackerPayload {
     tracker_id: String,
     tracker_name: String,
-    start_time:i64,
-    end_time:i64,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    start_time: Option<i64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    end_time: Option<i64>,
 }
 
 #[derive(Debug, Clone)]
@@ -58,7 +62,7 @@ pub struct SelectedDate {
 }
 
 struct SliderValue {
-    value: i32
+    value: i64
 }
 
 const FAVICON: Asset = asset!("static/assets/favicon.ico");
@@ -74,11 +78,11 @@ fn App() -> Element {
 
     use_context_provider(|| Signal::new( vec![
         SelectedTracker { 
-            tracker_id: "".to_string(),
+            tracker_id: DEFAULT_SELECTOR.to_string(),
             data: TrackerResponse::default()
         },
         SelectedTracker {
-            tracker_id: "".to_string(),
+            tracker_id: DEFAULT_SELECTOR.to_string(),
             data: TrackerResponse::default()
         },
     ]));
@@ -88,7 +92,6 @@ fn App() -> Element {
 
     use_context_provider(|| Signal::new(
         SliderValue{ value: 1 }));
-
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }

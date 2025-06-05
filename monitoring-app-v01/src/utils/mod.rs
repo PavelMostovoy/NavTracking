@@ -41,22 +41,22 @@ pub fn date_to_unix_range(date: NaiveDate) -> Option<(i64, i64)> {
 }
 
 
-// pub async fn send_tracker_request(
-//     tracker_payload: TrackerPayload,
-// ) -> Result<TrackerResponse, reqwest::Error> {
-//     let config = Settings::load();
-//     let client = Client::new();
-//     let endpoint = format!("{}/get_single_track", config.tracker_api_url);
-//     let res = client
-//         .post(endpoint)
-//         .json(&tracker_payload)
-//         .send()
-//         .await?;
-// 
-//     let tracker_data = res.json::<TrackerResponse>().await?;
-//     Ok(tracker_data)
-// }
 pub async fn send_tracker_request(
+    tracker_payload: TrackerPayload,
+) -> Result<TrackerResponse, reqwest::Error> {
+    let config = Settings::load();
+    let client = Client::new();
+    let endpoint = format!("{}/get_single_track", config.tracker_api_url);
+    let res = client
+        .post(endpoint)
+        .json(&tracker_payload)
+        .send()
+        .await?;
+
+    let tracker_data = res.json::<TrackerResponse>().await?;
+    Ok(tracker_data)
+}
+pub async fn send_tracker_request_actual(
     tracker_payload: TrackerPayload,
     amount: i64
 ) -> Result<TrackerResponse, reqwest::Error> {
@@ -79,4 +79,16 @@ pub struct SimplifiedData {
     pub lat: i32,
     pub lon: i32,
     pub time: u32,
+}
+
+pub(crate) fn generate_markers(coordinates: Vec<(f32, f32, &str)>, color: &str) -> String {
+    coordinates
+        .iter()
+        .map(|(lat, lon, name)| {
+            format!(
+                r#"L.circleMarker([{lat}, {lon}], {{radius: 2, color: '{color}'}} ).addTo(map).bindPopup("{name}");"#,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }

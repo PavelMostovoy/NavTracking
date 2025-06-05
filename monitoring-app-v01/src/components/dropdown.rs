@@ -1,5 +1,5 @@
 use crate::utils::{date_to_unix_range, send_tracker_request};
-use crate::{SelectedDate, SelectedTracker, SliderValue, TrackerPayload, TrackerResponse, DEFAULT_SELECTOR, TRACKER_OPTIONS};
+use crate::{SelectedDate, SelectedTracker, TrackerPayload, TrackerResponse, DEFAULT_SELECTOR, TRACKER_OPTIONS};
 use dioxus::prelude::*;
 
 #[component]
@@ -9,10 +9,6 @@ pub fn DropdownSelector(index: usize) -> Element {
 
     let tracker_snapshot = trackers.read()[index].clone();
     let current_id = tracker_snapshot.tracker_id.clone();
-
-    let slider_value = use_context::<Signal<SliderValue>>();
-    let actual_slider_value = slider_value.read().value;
-
     let mut color = "GREEN";
 
     if index == 0 {
@@ -48,12 +44,12 @@ pub fn DropdownSelector(index: usize) -> Element {
                         let payload = TrackerPayload {
                             tracker_id: tracker_id.clone(),
                             tracker_name: tracker_name.clone(),
-                            start_time: start,
-                            end_time: end,
+                            start_time: Option::from(start),
+                            end_time: Option::from(end),
                         };
 
                         spawn(async move {
-                            let response = send_tracker_request(payload, actual_slider_value as i64)
+                            let response = send_tracker_request(payload)
                                 .await
                                 .unwrap_or_default();
                             trackers.write()[index] = SelectedTracker {
@@ -68,7 +64,7 @@ pub fn DropdownSelector(index: usize) -> Element {
                 },
 
                 option {
-                    value: "",
+                    value: "Not Selected ...",
                     disabled: false,
                     hidden: false,
                     selected: current_id.is_empty(),
