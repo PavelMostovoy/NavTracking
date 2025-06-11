@@ -1,7 +1,7 @@
 use crate::utils::{
     average_geographic_position, generate_markers, send_tracker_request_actual, Coordinate,
 };
-use crate::{SelectedTracker, SliderValue, TrackerPayload, DEFAULT_SELECTOR, TRACKER_OPTIONS};
+use crate::{MapDisplayState, SelectedTracker, SliderValue, TrackerPayload, DEFAULT_SELECTOR, TRACKER_OPTIONS};
 use dioxus::prelude::*;
 
 #[component]
@@ -9,16 +9,19 @@ pub(crate) fn LiveMap() -> Element {
     let trackers = use_context::<Signal<Vec<SelectedTracker>>>();
     let trackers_data = use_signal(|| vec![]);
     let mut slider_value = use_signal(|| 1);
+    let map_state = use_context::<Signal<MapDisplayState>>();
     let mut blue_markers = vec![];
 
     use_effect(move || {
         let trackers_clone = trackers.read().clone();
         let mut trackers_data = trackers_data.clone();
+        
         let slider_value = slider_value.clone();
         let amount = slider_value.read().clone() + 1;
+        
 
         spawn(async move {
-
+            
             for (index, tracker) in trackers_clone.into_iter().enumerate() {
                 if tracker.tracker_id != DEFAULT_SELECTOR {
                     println!("Selected order {}", index + 1);
@@ -71,13 +74,10 @@ pub(crate) fn LiveMap() -> Element {
 
     let mut html = include_str!("../../static/assets/map_template.html").to_string();
 
-    let all_coordinates = vec![];
 
-    let mid = average_geographic_position(all_coordinates);
-    let latitude = mid.lat;
-    let longitude = mid.lon;
-    html = html.replace("<!--START_LAT-->", &latitude.to_string());
-    html = html.replace("<!--START_LON-->", &longitude.to_string());
+    html = html.replace("<!--ZOOM_LEVEL-->", map_state.read().zoom.to_string().as_str());
+    html = html.replace("<!--START_LAT-->", map_state.read().coordinate.lat.to_string().as_str());
+    html = html.replace("<!--START_LON-->", map_state.read().coordinate.lon.to_string().as_str());
 
     if blue_markers.len() > 0 {
         let marker_js: String = generate_markers(blue_markers.clone(), "blue");
@@ -87,6 +87,7 @@ pub(crate) fn LiveMap() -> Element {
     rsx! {
         div {
             iframe {
+                id: "map_iframe",
                 width: "1024",
                 height: "768",
                 srcdoc: "{html}",

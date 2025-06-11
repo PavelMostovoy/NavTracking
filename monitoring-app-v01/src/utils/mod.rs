@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, TimeZone, Utc};
 use reqwest::Client;
 use serde::Deserialize;
-use crate::{TrackerPayload, TrackerResponse};
+use crate::{TrackerPayload, TrackerResponse, TrackerResult};
 use crate::config::Settings;
 
 
@@ -11,12 +11,21 @@ pub(crate) struct Coordinate {
     pub(crate) lon: f32,
 }
 
-pub(crate) fn average_geographic_position(coords: Vec<Coordinate>) -> Coordinate {
-    if coords.is_empty() {
-        return Coordinate {
+impl Default for Coordinate {
+    fn default() -> Self {
+        Coordinate {
             lat: 42.7,
             lon: 3.03,
-        };
+        }
+    }
+}
+
+
+
+
+pub(crate) fn average_geographic_position(coords: Vec<Coordinate>) -> Coordinate {
+    if coords.is_empty() {
+        return Coordinate::default();
     }
 
     let (sum_lat, sum_lon) = coords.iter().fold((0.0, 0.0), |(sum_lat, sum_lon), coord| {

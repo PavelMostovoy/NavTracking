@@ -1,10 +1,11 @@
 use crate::utils::{average_geographic_position, generate_markers, Coordinate};
-use crate::{SelectedTracker, SliderValue, DEFAULT_SELECTOR};
+use crate::{MapDisplayState, SelectedTracker, SliderValue, DEFAULT_SELECTOR};
 use dioxus::prelude::*;
 
 #[component]
 pub(crate) fn MyMap(id: i32) -> Element {
     let trackers = use_context::<Signal<Vec<SelectedTracker>>>();
+    let zoom_level = use_context::<Signal<MapDisplayState>>();
     
     let memo_html = use_memo(move || {
         let trackers_data = trackers.read();
@@ -45,6 +46,7 @@ pub(crate) fn MyMap(id: i32) -> Element {
         let latitude = mid.lat;
         let longitude = mid.lon;
 
+        html = html.replace("<!--ZOOM_LEVEL-->", zoom_level.read().zoom.to_string().as_str());
         html = html.replace("<!--START_LAT-->", &latitude.to_string());
         html = html.replace("<!--START_LON-->", &longitude.to_string());
 
