@@ -72,6 +72,7 @@ pub async fn send_tracker_request_actual(
     let config = Settings::load();
     let client = Client::new();
     let endpoint = format!("{}/get_last_positions/{}", config.tracker_api_url, amount);
+    println!("{:?}", tracker_payload);
     let res = client
         .post(endpoint)
         .json(&tracker_payload)

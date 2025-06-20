@@ -7,82 +7,26 @@ use dioxus::prelude::*;
 #[component]
 pub(crate) fn LiveMap() -> Element {
     let trackers = use_context::<Signal<Vec<SelectedTracker>>>();
-    let trackers_data = use_signal(|| vec![]);
     let mut slider_value = use_signal(|| 1);
     let map_state = use_context::<Signal<MapDisplayState>>();
-    let mut blue_markers = vec![];
-
-    use_effect(move || {
-        let trackers_clone = trackers.read().clone();
-        let mut trackers_data = trackers_data.clone();
-        
-        let slider_value = slider_value.clone();
-        let amount = slider_value.read().clone() + 1;
-        
-
-        spawn(async move {
-            
-            for (index, tracker) in trackers_clone.into_iter().enumerate() {
-                if tracker.tracker_id != DEFAULT_SELECTOR {
-                    println!("Selected order {}", index + 1);
-                    println!("Tracker ID: {}", tracker.tracker_id);
-
-                    let tracker_name = TRACKER_OPTIONS
-                        .iter()
-                        .find(|x| x.0 == tracker.tracker_id)
-                        .map(|x| x.1.to_string())
-                        .unwrap_or("Unknown".to_string());
-
-                    println!("Tracker Name: {}", tracker_name);
-
-                    let payload = TrackerPayload {
-                        tracker_id: tracker.tracker_id.clone(),
-                        tracker_name,
-                        start_time: Some(1748303264),
-                        end_time: Some(1748303264),
-                    };
-                    let response = send_tracker_request_actual(payload, amount)
-                        .await
-                        .unwrap_or_default();
-
-                    let tracker_data = SelectedTracker {
-                        tracker_id: tracker.tracker_id.clone(),
-                        data: response,
-                    };
-
-                    trackers_data.write().push(tracker_data);
-                }
-            }
-        });
-    });
-
-    let tracker_data_cloned = trackers_data.clone();
-
-    for tracker in tracker_data_cloned.iter() {
-        println!("{:?}", tracker.tracker_id);
-        let cloned_tracker = tracker.clone();
-        for coord in cloned_tracker.data.result.data.iter() {
-            let coordinate = Coordinate {
-                lat: (coord.lat as f32) / 1000000.0,
-                lon: (coord.lon as f32) / 1000000.0,
-            };
-
-            let marker = (coordinate.lat, coordinate.lon, "Temporary placeholder");
-            blue_markers.push(marker);
-        }
-    }
-
+    
     let mut html = include_str!("../../static/assets/map_template.html").to_string();
-
-
     html = html.replace("<!--ZOOM_LEVEL-->", map_state.read().zoom.to_string().as_str());
     html = html.replace("<!--START_LAT-->", map_state.read().coordinate.lat.to_string().as_str());
     html = html.replace("<!--START_LON-->", map_state.read().coordinate.lon.to_string().as_str());
 
-    if blue_markers.len() > 0 {
-        let marker_js: String = generate_markers(blue_markers.clone(), "blue");
-        html = html.replace("<!--BLUE_MARKERS-->", &marker_js);
-    }
+    // will be updated when slider value changes
+    use_effect(move || {
+        let slider_value = slider_value.read().clone();
+        spawn(async move {update_tracker_data(slider_value, trackers).await});
+    });
+    
+    // will be static to avoid re-rendering
+    let html = use_memo(move || {
+        html = add_tracker_trace(html.clone(), trackers);
+        html.clone()
+    });
+
 
     rsx! {
         div {
@@ -101,14 +45,13 @@ pub(crate) fn LiveMap() -> Element {
             label { "Track Tail:" }
             input {
                 r#type: "range",
-                min: "0",
+                min: "1",
                 max: "100",
                 value: "{slider_value}",
                 style: "width: 100%;",
                 oninput: move |evt| {
                     if let Ok(val) = evt.value().parse::<i64>() {
                         slider_value.set(val);
-                        println!("Slider moved to: {val}");
                     }
                 }
             }
@@ -117,4 +60,61 @@ pub(crate) fn LiveMap() -> Element {
             }
         }
     }
+}
+
+async fn update_tracker_data(amount: i64, mut trackers: Signal<Vec<SelectedTracker>>) {
+    
+    let mut updated = trackers.read().clone();
+    
+    for tracker in &mut updated {
+        if tracker.tracker_id != DEFAULT_SELECTOR {
+
+            let tracker_name = TRACKER_OPTIONS
+                .iter()
+                .find(|x| x.0 == tracker.tracker_id)
+                .map(|x| x.1.to_string())
+                .unwrap_or("Unknown".to_string());
+
+            let payload = TrackerPayload {
+                tracker_id: tracker.tracker_id.clone(),
+                tracker_name,
+                start_time: None,
+                end_time: None,
+            };
+            let response = send_tracker_request_actual(payload,amount)
+                .await
+                .unwrap_or_default();
+            tracker.data=response;
+            
+        }
+    }
+    trackers.set(updated);
+}
+
+fn add_tracker_trace(mut html: String,  trackers: Signal<Vec<SelectedTracker>>) -> String {
+    
+    for (index, tracker) in trackers.read().clone().into_iter().enumerate() {
+        if tracker.tracker_id != DEFAULT_SELECTOR {
+            let mut markers = vec![];
+            for coord in tracker.data.result.data.iter() {
+                let coordinate = Coordinate {
+                    lat: (coord.lat as f32) / 1000000.0,
+                    lon: (coord.lon as f32) / 1000000.0,
+                };
+                let marker = (coordinate.lat, coordinate.lon, tracker.tracker_id.as_str());
+                markers.push(marker);
+            }
+            let color = match index {
+                1 => "red",
+                2 => "green",
+                3 => "yellow",
+                4 => "orange",
+                _ => "blue",
+            };
+            // TODO Add markers to the map
+            let marker_js: String = generate_markers(markers, color);
+            html = html.replace("<!--BLUE_MARKERS-->", marker_js.clone().as_str());
+        }
+    }
+    html
 }

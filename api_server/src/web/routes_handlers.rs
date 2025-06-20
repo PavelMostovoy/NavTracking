@@ -155,8 +155,12 @@ pub struct UserPayload {
 pub(crate) struct TrackerPayload {
     tracker_id: String,
     tracker_name: String,
-    start_time: i64,
-    end_time: i64,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    start_time: Option<i64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    end_time: Option<i64>,
 }
 
 pub async fn token_visits(AuthBearer(bearer): AuthBearer) -> impl IntoResponse {
@@ -352,7 +356,8 @@ pub async fn get_last_positions(
                 Json(json!({ "error": "Failed to parse database response" })),
             )
         })?
-    {
+    {   
+        println!("{:?}",record);
         tracker_data.push(SimplifiedData {
             lat: record.latitude,
             lon: record.longitude,
