@@ -11,9 +11,18 @@ use tokio::net::TcpListener;
 use std::net::SocketAddr;
 use crate::database::{User, DB_URL, DB_USER};
 use crate::web::routes_handlers::{create_user, get_pwd_hash, auth_check, token_visits, handle_uplink, get_single_track, get_last_positions};
+use tracing::info;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
 
 #[tokio::main]
 async fn main() {
+
+    tracing_subscriber::fmt()
+        .with_env_filter("info") // Set default level to info
+        .init();
+    
+    info!("Starting server...");
     let db_full = std::env::var("DATABASE_URL");
     let db_pwd = std::env::var("DB_PASSWORD");
     let db_connection_str;
@@ -50,13 +59,13 @@ async fn main() {
         .run_command(doc! { "ping": 1 })
         .await
         .unwrap();
-    println!("Pinged your database. Successfully connected to MongoDB!");
+    info!("Pinged your database. Successfully connected to MongoDB!");
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3311));
 
     let listener = TcpListener::bind(addr).await.unwrap();
 
-    println!("Server running on http://{addr}");
+    info!("Server running on http://{addr}");
 
     axum::serve(listener, app(client))
         .await

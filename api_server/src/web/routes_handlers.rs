@@ -15,6 +15,7 @@ use serde_json::{json, Value};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::{Duration, SystemTime};
 use mongodb::options::FindOptions;
+use tracing::info;
 
 const SECRET_SIGNING_KEY: &[u8] = b"keep_th1s_@_secret";
 const SECRET_LORA_KEY: &str = "ZFj6GzdbLoLT3v2shaVq5iroGViEHglsx3pjXCc2eDbIgOib6sZrwF0q8ibxBIDS";
@@ -235,7 +236,7 @@ pub async fn handle_uplink(
                 let _ = collection.insert_one(data_to_send).await;
             }
             Err(_) => {
-                println!("Error happens");
+               info!("Error happens");
             }
         }
     }
@@ -356,8 +357,8 @@ pub async fn get_last_positions(
                 Json(json!({ "error": "Failed to parse database response" })),
             )
         })?
-    {   
-        println!("{:?}",record);
+    {
+        info!("{:?}",record);
         tracker_data.push(SimplifiedData {
             lat: record.latitude,
             lon: record.longitude,

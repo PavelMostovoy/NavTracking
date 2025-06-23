@@ -14,3 +14,5 @@ jsonwebtoken = "9.3.0"
 chrono = "0.4.39"
 base64 = "0.22.1"
 futures = "0.3.31"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
