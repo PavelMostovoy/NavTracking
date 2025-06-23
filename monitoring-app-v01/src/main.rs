@@ -6,6 +6,8 @@ mod utils;
 use chrono::{Local, NaiveDate};
 use dioxus::desktop::Config;
 use dioxus::prelude::*;
+use dioxus_logger::tracing;
+use dioxus_logger::tracing::Level;
 use pages::Route;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -81,6 +83,7 @@ const MAIN_CSS: Asset = asset!("static/assets/main.css");
 const CONFIG_TOML: &str = include_str!("../config.toml");
 
 fn main() {
+    dioxus_logger::init(Level::INFO).expect("failed to initialize logger");
     dioxus::launch(App);
 }
 
@@ -110,7 +113,7 @@ fn App() -> Element {
     use_context_provider(|| Signal::new(MapDisplayState { zoom: 13, coordinate: Coordinate::default() }));
 
     spawn(async move {
-        println!("Started new listener");
+       tracing::info!("Started new listener");
         let mut zoom_level = use_context::<Signal<MapDisplayState>>();
 
         let mut eval = document::eval(
@@ -128,20 +131,20 @@ fn App() -> Element {
             let mut map_state = MapDisplayState { zoom: 13, coordinate: Default::default() };
             if let Ok(json)= parsed {
                 if let Some(zoom) = json["zoom"].as_str() {
-                    println!("Zoom: {}", zoom);
+                    tracing::info!("Zoom: {}", zoom);
                     map_state.zoom = zoom.parse::<i32>().unwrap();
                 }
                 if let Some(lat) = json["center"]["lat"].as_str() {
-                    println!("Lat: {}", lat);
+                    tracing::info!("Lat: {}", lat);
                     map_state.coordinate.lat = lat.parse::<f32>().unwrap();
                 }
                 if let Some(lng) = json["center"]["lng"].as_str() {
-                    println!("Lng: {}", lng);
+                    tracing::info!("Lng: {}", lng);
                     map_state.coordinate.lon = lng.parse::<f32>().unwrap();
                 }
                 zoom_level.set(map_state);
             } else {
-                println!("Failed to parse JSON: {}", message);
+                tracing::info!("Failed to parse JSON: {}", message);
             }
         }
         

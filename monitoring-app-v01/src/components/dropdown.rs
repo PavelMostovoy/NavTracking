@@ -1,6 +1,7 @@
 use crate::utils::{date_to_unix_range, send_tracker_request};
 use crate::{SelectedDate, SelectedTracker, TrackerPayload, TrackerResponse, DEFAULT_SELECTOR, TRACKER_OPTIONS};
 use dioxus::prelude::*;
+use dioxus_logger::tracing;
 
 #[component]
 pub fn DropdownSelector(index: usize) -> Element {
@@ -59,7 +60,7 @@ pub fn DropdownSelector(index: usize) -> Element {
 
                         });
                     } else {
-                        eprintln!("Invalid date provided!");
+                       tracing::warn!("Invalid date provided!");
                     }
                 },
 

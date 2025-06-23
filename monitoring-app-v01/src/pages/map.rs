@@ -1,6 +1,7 @@
 use crate::utils::{average_geographic_position, generate_markers, Coordinate};
 use crate::{MapDisplayState, SelectedTracker, DEFAULT_SELECTOR};
 use dioxus::prelude::*;
+use dioxus_logger::tracing;
 
 #[component]
 pub(crate) fn MyMap(id: i32) -> Element {
@@ -18,7 +19,7 @@ pub(crate) fn MyMap(id: i32) -> Element {
 
         for (index, tracker) in trackers_data.iter().enumerate() {
             if !tracker.tracker_id.is_empty() && tracker.tracker_id != DEFAULT_SELECTOR {
-                println!(
+                tracing::info!(
                     "Tracker id: {} tracker Data: {:?}",
                     tracker.tracker_id, tracker.data
                 );
