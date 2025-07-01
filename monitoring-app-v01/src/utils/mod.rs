@@ -97,7 +97,40 @@ pub(crate) fn generate_markers(coordinates: Vec<(f32, f32, &str)>, color: &str) 
         .iter()
         .map(|(lat, lon, name)| {
             format!(
-                r#"L.circleMarker([{lat}, {lon}], {{radius: 2, color: '{color}'}} ).addTo(map).bindPopup("{name}");"#,
+                r#"
+                (function() {{
+                    const marker = L.circleMarker([{lat}, {lon}], {{
+                        radius: 5,
+                        color: '{color}',
+                        fillColor: '{color}',
+                        fillOpacity: 0.6,
+                        weight: 2,
+                        opacity: 0.8
+                    }});
+
+                    marker.bindPopup(`
+                        <div style="font-family: 'Roboto', sans-serif; padding: 5px;">
+                            <strong style="color: #333; font-size: 14px;">{name}</strong>
+                            <div style="margin-top: 5px; font-size: 12px; color: #666;">
+                                <div>Lat: {lat}</div>
+                                <div>Lon: {lon}</div>
+                            </div>
+                        </div>
+                    `, {{
+                        className: 'custom-popup'
+                    }});
+
+                    marker.on('mouseover', function() {{
+                        this.setStyle({{ radius: 7, weight: 3 }});
+                    }});
+
+                    marker.on('mouseout', function() {{
+                        this.setStyle({{ radius: 5, weight: 2 }});
+                    }});
+
+                    marker.addTo(map);
+                }})();
+                "#,
             )
         })
         .collect::<Vec<_>>()

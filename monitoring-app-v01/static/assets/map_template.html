@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaflet Map with Measure Tool</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link
@@ -10,64 +11,159 @@
             integrity="sha384-P9DABSdtEY/XDbEInD3q+PlL+BjqPCXGcF8EkhtKSfSTr/dS5PBKa9+/PMkW2xsY"
             crossorigin="anonymous"
     />
-
-
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script
             src="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.js"
             integrity="sha384-8SqKZR7V8uOetpjjbcNJHvwuHpb074WS0UXjCLhzfJUqYn3B/uWx1WVv5mwRp1mV"
             crossorigin="anonymous"
     ></script>
 
-
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #e74c3c;
+            --background-dark: #1a1a2e;
+            --background-light: #16213e;
+            --text-color: #f1f1f1;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
         html, body, #map {
             margin: 0;
             padding: 0;
             height: 100%;
             width: 100%;
+            font-family: 'Roboto', sans-serif;
         }
+
+        #map {
+            z-index: 1;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .leaflet-control-zoom a {
+            background-color: rgba(255, 255, 255, 0.9) !important;
+            color: #333 !important;
+            transition: all 0.2s ease;
+        }
+
+        .leaflet-control-zoom a:hover {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+        }
+
+
+        /* Loading indicator */
+        .map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .map-loading::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
     </style>
 </head>
 <body>
 <div id="map"></div>
+<div id="loading" class="map-loading">Loading map data...</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // Hide loading indicator after map loads
+        setTimeout(() => {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+        }, 1000);
+
         // plugin options section
         const options = {
-            position: 'topleft',        // Leaflet control position option
-            circleMarker: {               // Leaflet circle marker options for points used in this plugin
-                color: 'red',
-                radius: 1
+            position: 'topleft',
+            circleMarker: {
+                color: '#3498db',
+                radius: 2,
+                fillOpacity: 0.6
             },
-            lineStyle: {                  // Leaflet polyline options for lines used in this plugin
-                color: 'red',
-                dashArray: '1,6'
+            lineStyle: {
+                color: '#3498db',
+                dashArray: '5,10',
+                weight: 2
             },
-            lengthUnit: {                 // You can use custom length units. Default unit is kilometers.
-                display: 'm',              // This is the display value will be shown on the screen. Example: 'meters'
-                decimal: 0,                 // Distance result will be fixed to this value.
-                factor: 1000,               // This value will be used to convert from kilometers. Example: 1000 (from kilometers to meters)
+            lengthUnit: {
+                display: 'm',
+                decimal: 0,
+                factor: 1000,
                 label: 'Distance:'
             },
             angleUnit: {
-                display: '&deg;',           // This is the display value will be shown on the screen. Example: 'Gradian'
-                decimal: 2,                 // Bearing result will be fixed to this value.
-                factor: null,                // This option is required to customize angle unit. Specify solid angle value for angle unit. Example: 400 (for gradian).
+                display: '&deg;',
+                decimal: 2,
+                factor: null,
                 label: 'Bearing:'
             }
         };
+
         // map creation section
-        const map = L.map('map').setView([<!--START_LAT-->, <!--START_LON-->], <!--ZOOM_LEVEL-->);
-        L.control.ruler(options).addTo(map);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
+        const map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([<!--START_LAT-->, <!--START_LON-->], <!--ZOOM_LEVEL-->);
+
+        // Add custom zoom control
+        L.control.zoom({
+            position: 'bottomright'
         }).addTo(map);
+
+        // Add attribution in a more subtle way
+        L.control.attribution({
+            position: 'bottomleft',
+            prefix: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Add ruler
+        L.control.ruler(options).addTo(map);
+
+        // Add a colorful tile layer with natural features
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Send initial zoom to parent
         window.parent.postMessage({
             type: "zoom",
             value: map.getZoom().toString()
         }, "*");
+
+        // Update parent on map movement
         map.on('moveend zoomend', function () {
             const zoom = map.getZoom();
             const center = map.getCenter();
@@ -81,8 +177,15 @@
             }, "*");
         });
 
+        // Add markers
         <!--BLUE_MARKERS-->
         <!--RED_MARKERS-->
+
+        // Add scale control
+        L.control.scale({
+            imperial: false,
+            position: 'bottomleft'
+        }).addTo(map);
     });
 </script>
 </body>

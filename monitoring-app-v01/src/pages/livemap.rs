@@ -9,19 +9,21 @@ pub(crate) fn LiveMap() -> Element {
     let trackers = use_context::<Signal<Vec<SelectedTracker>>>();
     let mut slider_value = use_signal(|| 1);
     let map_state = use_context::<Signal<MapDisplayState>>();
-    
+
     let mut html = include_str!("../../static/assets/map_template.html").to_string();
     html = html.replace("<!--ZOOM_LEVEL-->", map_state.read().zoom.to_string().as_str());
     html = html.replace("<!--START_LAT-->", map_state.read().coordinate.lat.to_string().as_str());
     html = html.replace("<!--START_LON-->", map_state.read().coordinate.lon.to_string().as_str());
 
-    // will be updated when slider value changes
+    // Trigger data load when component mounts and when slider value changes
     use_effect(move || {
-        let slider_value = slider_value.read().clone();
-        spawn(async move {update_tracker_data(slider_value, trackers).await});
+        let current_value = slider_value.read().clone();
+        spawn(async move {
+            update_tracker_data(current_value, trackers).await;
+        });
     });
-    
-    // will be static to avoid re-rendering
+
+    // Generate HTML with the current tracker data
     let html = use_memo(move || {
         html = add_tracker_trace(html.clone(), trackers);
         html.clone()
@@ -63,9 +65,9 @@ pub(crate) fn LiveMap() -> Element {
 }
 
 async fn update_tracker_data(amount: i64, mut trackers: Signal<Vec<SelectedTracker>>) {
-    
+
     let mut updated = trackers.read().clone();
-    
+
     for tracker in &mut updated {
         if tracker.tracker_id != DEFAULT_SELECTOR {
 
@@ -85,15 +87,16 @@ async fn update_tracker_data(amount: i64, mut trackers: Signal<Vec<SelectedTrack
                 .await
                 .unwrap_or_default();
             tracker.data=response;
-            
+
         }
     }
     trackers.set(updated);
 }
 
-fn add_tracker_trace(mut html: String,  trackers: Signal<Vec<SelectedTracker>>) -> String {
-    
-    for (index, tracker) in trackers.read().clone().into_iter().enumerate() {
+fn add_tracker_trace(mut html: String, trackers: Signal<Vec<SelectedTracker>>) -> String {
+    let trackers_data = trackers.read();
+
+    for (index, tracker) in trackers_data.iter().enumerate() {
         if tracker.tracker_id != DEFAULT_SELECTOR {
             let mut markers = vec![];
             for coord in tracker.data.result.data.iter() {
@@ -111,9 +114,15 @@ fn add_tracker_trace(mut html: String,  trackers: Signal<Vec<SelectedTracker>>) 
                 4 => "orange",
                 _ => "blue",
             };
-            // TODO Add markers to the map
-            let marker_js: String = generate_markers(markers, color);
-            html = html.replace("<!--BLUE_MARKERS-->", marker_js.clone().as_str());
+
+            if !markers.is_empty() {
+                let marker_js: String = generate_markers(markers, color);
+                if index == 0 {
+                    html = html.replace("<!--BLUE_MARKERS-->", &marker_js);
+                } else if index == 1 {
+                    html = html.replace("<!--RED_MARKERS-->", &marker_js);
+                }
+            }
         }
     }
     html
