@@ -1,13 +1,13 @@
 use crate::utils::{
     average_geographic_position, generate_markers, generate_polyline, send_tracker_request_actual, Coordinate,
 };
-use crate::{MapDisplayState, SelectedTracker, SliderValue, TrackerPayload, DEFAULT_SELECTOR, TRACKER_OPTIONS};
+use crate::{MapDisplayState, SelectedTracker, TrackerPayload, DEFAULT_SELECTOR, TRACKER_OPTIONS};
 use dioxus::prelude::*;
+use std::time::Duration;
 
 #[component]
 pub(crate) fn LiveMap() -> Element {
     let trackers = use_context::<Signal<Vec<SelectedTracker>>>();
-    let mut slider_value = use_signal(|| 1);
     let map_state = use_context::<Signal<MapDisplayState>>();
 
     let mut html = include_str!("../../static/assets/map_template.html").to_string();
@@ -15,13 +15,6 @@ pub(crate) fn LiveMap() -> Element {
     html = html.replace("<!--START_LAT-->", map_state.read().coordinate.lat.to_string().as_str());
     html = html.replace("<!--START_LON-->", map_state.read().coordinate.lon.to_string().as_str());
 
-    // Trigger data load when component mounts and when slider value changes
-    use_effect(move || {
-        let current_value = slider_value.read().clone();
-        spawn(async move {
-            update_tracker_data(current_value, trackers).await;
-        });
-    });
 
     // Generate HTML with the current tracker data
     let html = use_memo(move || {
@@ -40,25 +33,6 @@ pub(crate) fn LiveMap() -> Element {
                 style: "flex: 1;\
                     width: 100%;\
                     border: none;",
-            }
-        }
-        div {
-            style: "margin-top: 20px;",
-            label { "Track Tail:" }
-            input {
-                r#type: "range",
-                min: "1",
-                max: "100",
-                value: "{slider_value}",
-                style: "width: 100%;",
-                oninput: move |evt| {
-                    if let Ok(val) = evt.value().parse::<i64>() {
-                        slider_value.set(val);
-                    }
-                }
-            }
-            p {
-                "Current slider value: {slider_value}"
             }
         }
     }

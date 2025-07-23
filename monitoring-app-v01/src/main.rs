@@ -68,10 +68,6 @@ pub struct SelectedDate {
     pub date: NaiveDate,
 }
 
-struct SliderValue {
-    value: i64,
-}
-
 struct MapDisplayState {
     zoom: i32,
     coordinate: Coordinate,
@@ -107,8 +103,7 @@ fn App() -> Element {
             date: Local::now().date_naive(),
         })
     });
-
-    use_context_provider(|| Signal::new(SliderValue { value: 1 }));
+    
 
     use_context_provider(|| Signal::new(MapDisplayState { zoom: 13, coordinate: Coordinate::default() }));
 
