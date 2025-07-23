@@ -1,5 +1,5 @@
 use crate::utils::{
-    average_geographic_position, generate_markers, send_tracker_request_actual, Coordinate,
+    average_geographic_position, generate_markers, generate_polyline, send_tracker_request_actual, Coordinate,
 };
 use crate::{MapDisplayState, SelectedTracker, SliderValue, TrackerPayload, DEFAULT_SELECTOR, TRACKER_OPTIONS};
 use dioxus::prelude::*;
@@ -98,14 +98,14 @@ fn add_tracker_trace(mut html: String, trackers: Signal<Vec<SelectedTracker>>) -
 
     for (index, tracker) in trackers_data.iter().enumerate() {
         if tracker.tracker_id != DEFAULT_SELECTOR {
-            let mut markers = vec![];
+            let mut coordinates = vec![];
             for coord in tracker.data.result.data.iter() {
                 let coordinate = Coordinate {
                     lat: (coord.lat as f32) / 1000000.0,
                     lon: (coord.lon as f32) / 1000000.0,
                 };
-                let marker = (coordinate.lat, coordinate.lon, tracker.tracker_id.as_str());
-                markers.push(marker);
+                let point = (coordinate.lat, coordinate.lon, tracker.tracker_id.as_str());
+                coordinates.push(point);
             }
             let color = match index {
                 1 => "red",
@@ -115,12 +115,25 @@ fn add_tracker_trace(mut html: String, trackers: Signal<Vec<SelectedTracker>>) -
                 _ => "blue",
             };
 
-            if !markers.is_empty() {
-                let marker_js: String = generate_markers(markers, color);
+            if !coordinates.is_empty() {
+                // Generate polyline for all points (the "tail")
+                let polyline_js = generate_polyline(&coordinates, color);
+                
+                // Generate a single marker for the latest position
+                let latest_position = if let Some(latest) = coordinates.first() {
+                    vec![*latest]
+                } else {
+                    vec![]
+                };
+                let marker_js = generate_markers(latest_position, color);
+                
+                // Combine polyline and marker JavaScript
+                let combined_js = format!("{}\n{}", polyline_js, marker_js);
+                
                 if index == 0 {
-                    html = html.replace("<!--BLUE_MARKERS-->", &marker_js);
+                    html = html.replace("<!--BLUE_MARKERS-->", &combined_js);
                 } else if index == 1 {
-                    html = html.replace("<!--RED_MARKERS-->", &marker_js);
+                    html = html.replace("<!--RED_MARKERS-->", &combined_js);
                 }
             }
         }

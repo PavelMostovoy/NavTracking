@@ -92,6 +92,34 @@ pub struct SimplifiedData {
     pub time: u32,
 }
 
+pub(crate) fn generate_polyline(coordinates: &[(f32, f32, &str)], color: &str) -> String {
+    if coordinates.is_empty() {
+        return String::new();
+    }
+
+    // Format coordinates for polyline
+    let points = coordinates
+        .iter()
+        .map(|(lat, lon, _)| format!("[{}, {}]", lat, lon))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    format!(
+        r#"
+        (function() {{
+            const polyline = L.polyline([{points}], {{
+                color: '{color}',
+                weight: 3,
+                opacity: 0.7,
+                lineJoin: 'round'
+            }});
+            
+            polyline.addTo(map);
+        }})();
+        "#
+    )
+}
+
 pub(crate) fn generate_markers(coordinates: Vec<(f32, f32, &str)>, color: &str) -> String {
     coordinates
         .iter()
