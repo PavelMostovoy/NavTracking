@@ -103,7 +103,7 @@ fn App() -> Element {
             date: Local::now().date_naive(),
         })
     });
-    
+
 
     use_context_provider(|| Signal::new(MapDisplayState { zoom: 13, coordinate: Coordinate::default() }));
 

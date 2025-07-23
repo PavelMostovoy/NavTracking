@@ -10,16 +10,25 @@ pub(crate) fn LiveMap() -> Element {
     let trackers = use_context::<Signal<Vec<SelectedTracker>>>();
     let map_state = use_context::<Signal<MapDisplayState>>();
 
+
     let mut html = include_str!("../../static/assets/map_template.html").to_string();
     html = html.replace("<!--ZOOM_LEVEL-->", map_state.read().zoom.to_string().as_str());
     html = html.replace("<!--START_LAT-->", map_state.read().coordinate.lat.to_string().as_str());
     html = html.replace("<!--START_LON-->", map_state.read().coordinate.lon.to_string().as_str());
 
+    // Trigger data load when the component mounts
+    use_effect(move || {
+        spawn(async move {
+            // Always fetch the last 100 records
+            update_tracker_data(100, trackers).await;
+        });
+    });
 
     // Generate HTML with the current tracker data
     let html = use_memo(move || {
         html = add_tracker_trace(html.clone(), trackers);
         html.clone()
+
     });
 
 
