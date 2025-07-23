@@ -4,7 +4,7 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaflet Map with Measure Tool</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     <link
             rel="stylesheet"
             href="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.css"
@@ -12,12 +12,17 @@
             crossorigin="anonymous"
     />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script
             src="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.js"
             integrity="sha384-8SqKZR7V8uOetpjjbcNJHvwuHpb074WS0UXjCLhzfJUqYn3B/uWx1WVv5mwRp1mV"
             crossorigin="anonymous"
     ></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/linghuam/Leaflet.TrackPlayBack@master/dist/control.playback.css">
+    <script src="https://cdn.jsdelivr.net/gh/linghuam/Leaflet.TrackPlayBack@master/dist/control.trackplayback.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/linghuam/Leaflet.TrackPlayBack@master/dist/leaflet.trackplayback.js"></script>
+
 
     <style>
         :root {
@@ -162,6 +167,18 @@
             type: "zoom",
             value: map.getZoom().toString()
         }, "*");
+
+
+        const sampleData = [
+            {lat: 42.684734, lng: 3.034418, time: 1502529980, dir: 320, info: [{key: 'name', value: 'ship1'}]},
+            {lat: 42.685734, lng: 3.035418, time: 1502531980, dir: 330, info: [{key: 'name', value: 'ship1'}]},
+            {lat: 42.686734, lng: 3.036418, time: 1502532980, dir: 340, info: [{key: 'name', value: 'ship1'}]}
+        ];
+
+        const trackplayback = L.trackplayback(sampleData, map);
+        const trackplaybackControl = L.trackplaybackcontrol(trackplayback);
+        trackplaybackControl.addTo(map);
+
 
         // Update parent on map movement
         map.on('moveend zoomend', function () {
