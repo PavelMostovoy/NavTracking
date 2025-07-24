@@ -3,6 +3,7 @@ mod config;
 mod pages;
 mod utils;
 
+use crate::utils::Coordinate;
 use chrono::{Local, NaiveDate};
 use dioxus::desktop::Config;
 use dioxus::prelude::*;
@@ -11,7 +12,6 @@ use dioxus_logger::tracing::Level;
 use pages::Route;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use crate::utils::Coordinate;
 
 const DEFAULT_SELECTOR: &str = "Not Selected ...";
 
@@ -73,7 +73,6 @@ struct MapDisplayState {
     coordinate: Coordinate,
 }
 
-
 const FAVICON: Asset = asset!("static/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("static/assets/main.css");
 const CONFIG_TOML: &str = include_str!("../config.toml");
@@ -104,11 +103,15 @@ fn App() -> Element {
         })
     });
 
-
-    use_context_provider(|| Signal::new(MapDisplayState { zoom: 13, coordinate: Coordinate::default() }));
+    use_context_provider(|| {
+        Signal::new(MapDisplayState {
+            zoom: 13,
+            coordinate: Coordinate::default(),
+        })
+    });
 
     spawn(async move {
-       tracing::info!("Started new listener");
+        tracing::info!("Started new listener");
         let mut zoom_level = use_context::<Signal<MapDisplayState>>();
 
         let mut eval = document::eval(
@@ -142,7 +145,6 @@ fn App() -> Element {
                 tracing::info!("Failed to parse JSON: {}", message);
             }
         }
-        
     });
 
     rsx! {

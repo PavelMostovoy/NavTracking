@@ -12,6 +12,17 @@ pub(crate) fn MyMap(id: i32) -> Element {
         let trackers_data = trackers.read();
         let mut html = include_str!("../../static/assets/map_template.html").to_string();
 
+        let control_plugin_script =
+            include_str!("../../static/assets/dist/control.trackplayback.js").to_string();
+        let leaflet_plugin_script =
+            include_str!("../../static/assets/dist/leaflet.trackplayback.js").to_string();
+        let leaflet_plugin_css =
+            include_str!("../../static/assets/dist/control.playback.css").to_string();
+
+        html = html.replace("<!--LEAFLET_PLUGIN_CSS-->", &leaflet_plugin_css);
+        html = html.replace("<!--CONTROL_PLUGIN_SCRIPT-->", &control_plugin_script);
+        html = html.replace("<!--LEAFLET_PLUGIN_SCRIPT-->", &leaflet_plugin_script);
+
         let mut blue_markers = vec![];
         let mut red_markers = vec![];
 
@@ -21,7 +32,8 @@ pub(crate) fn MyMap(id: i32) -> Element {
             if !tracker.tracker_id.is_empty() && tracker.tracker_id != DEFAULT_SELECTOR {
                 tracing::info!(
                     "Tracker id: {} tracker Data: {:?}",
-                    tracker.tracker_id, tracker.data
+                    tracker.tracker_id,
+                    tracker.data
                 );
 
                 for coord in tracker.data.result.data.iter() {
@@ -47,22 +59,34 @@ pub(crate) fn MyMap(id: i32) -> Element {
         let latitude = mid.lat;
         let longitude = mid.lon;
 
-        html = html.replace("<!--ZOOM_LEVEL-->", map_state.read().zoom.to_string().as_str());
+        html = html.replace(
+            "<!--ZOOM_LEVEL-->",
+            map_state.read().zoom.to_string().as_str(),
+        );
         html = html.replace("<!--START_LAT-->", &latitude.to_string());
         html = html.replace("<!--START_LON-->", &longitude.to_string());
 
-        let tracker_placeholder :String = String::from("const sampleData = [
-            {lat: 42.684734, lng: 3.034418, time: 1502529980, dir: 320, info: [{key: 'name', value: 'ship1'}]},
-            {lat: 42.685734, lng: 3.035418, time: 1502531980, dir: 330, info: [{key: 'name', value: 'ship1'}]},
-            {lat: 42.686734, lng: 3.036418, time: 1502532980, dir: 340, info: [{key: 'name', value: 'ship1'}]}
-        ];
+        let tracker_placeholder :String = String::from("const sampleData = [[
+    {lat: 42.684734, lng: 3.034418, time: 1502529980, info: [{key: 'name', value: 'ship1'}]},
+    {lat: 42.685734, lng: 3.035418, time: 1502531980,  info: [{key: 'name', value: 'ship1'}]},
+    {lat: 42.686734, lng: 3.036418, time: 1502532980, info: [{key: 'name', value: 'ship1'}]}
+    ],
+      [
+        {lat: 42.685734, lng: 3.035418, time: 1502529980, dir: 320, color: '#33A8FF', info: [{key: 'name', value: 'ship2'}]},
+        {lat: 42.686734, lng: 3.036418, time: 1502531990, dir: 330, color: '#33A8FF', info: [{key: 'name', value: 'ship2'}]},
+        {lat: 42.687734, lng: 3.037418, time: 1502533110, dir: 340, color: '#33A8FF', info: [{key: 'name', value: 'ship2'}]}
+      ]];
 
-        const trackplayback = L.trackplayback(sampleData, map);
+        const trackplayback = L.trackplayback(sampleData, map, {targetOptions: {
+                                                                                width: 8,
+                                                                                height: 18,
+                                                                                color: '#00f',
+                                                                                }
+                                                                 });
         const trackplaybackControl = L.trackplaybackcontrol(trackplayback);
         trackplaybackControl.addTo(map);");
 
         html = html.replace("<!--TRACKERS-PLAYBACK-->", &tracker_placeholder);
-
 
         if blue_markers.len() > 0 {
             let marker_js: String = generate_markers(blue_markers.clone(), "blue");
