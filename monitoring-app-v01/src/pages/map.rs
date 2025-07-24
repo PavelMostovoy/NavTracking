@@ -51,6 +51,19 @@ pub(crate) fn MyMap(id: i32) -> Element {
         html = html.replace("<!--START_LAT-->", &latitude.to_string());
         html = html.replace("<!--START_LON-->", &longitude.to_string());
 
+        let tracker_placeholder :String = String::from("const sampleData = [
+            {lat: 42.684734, lng: 3.034418, time: 1502529980, dir: 320, info: [{key: 'name', value: 'ship1'}]},
+            {lat: 42.685734, lng: 3.035418, time: 1502531980, dir: 330, info: [{key: 'name', value: 'ship1'}]},
+            {lat: 42.686734, lng: 3.036418, time: 1502532980, dir: 340, info: [{key: 'name', value: 'ship1'}]}
+        ];
+
+        const trackplayback = L.trackplayback(sampleData, map);
+        const trackplaybackControl = L.trackplaybackcontrol(trackplayback);
+        trackplaybackControl.addTo(map);");
+
+        html = html.replace("<!--TRACKERS-PLAYBACK-->", &tracker_placeholder);
+
+
         if blue_markers.len() > 0 {
             let marker_js: String = generate_markers(blue_markers.clone(), "blue");
             html = html.replace("<!--BLUE_MARKERS-->", &marker_js);

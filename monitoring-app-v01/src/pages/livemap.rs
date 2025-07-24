@@ -1,9 +1,9 @@
-use crate::utils::{
-    average_geographic_position, generate_markers, generate_polyline, send_tracker_request_actual, Coordinate,
-};
+use crate::utils::{average_geographic_position, generate_markers, generate_polyline, send_tracker_request_actual, Coordinate};
 use crate::{MapDisplayState, SelectedTracker, TrackerPayload, DEFAULT_SELECTOR, TRACKER_OPTIONS};
 use dioxus::prelude::*;
 use std::time::Duration;
+use dioxus_logger::tracing;
+use tokio::time::sleep;
 
 #[component]
 pub(crate) fn LiveMap() -> Element {
@@ -16,17 +16,22 @@ pub(crate) fn LiveMap() -> Element {
     html = html.replace("<!--START_LAT-->", map_state.read().coordinate.lat.to_string().as_str());
     html = html.replace("<!--START_LON-->", map_state.read().coordinate.lon.to_string().as_str());
 
-    // Trigger data load when the component mounts
-    use_effect(move || {
-        spawn(async move {
-            // Always fetch the last 100 records
-            update_tracker_data(100, trackers).await;
-        });
+    // Potential bug with not updating a map if it is not moved
+    use_coroutine(move |_: UnboundedReceiver<()>| {
+        to_owned![trackers];
+        async move {
+            loop {
+                update_tracker_data(100, trackers.clone()).await;
+                tracing::info!("Updated by timer");
+                sleep(Duration::from_secs(60)).await;
+            }
+        }
     });
 
     // Generate HTML with the current tracker data
     let html = use_memo(move || {
-        html = add_tracker_trace(html.clone(), trackers);
+        let _ = trackers.read();
+        html = add_tracker_trace(html.clone(), trackers, false);
         html.clone()
 
     });
@@ -76,8 +81,9 @@ async fn update_tracker_data(amount: i64, mut trackers: Signal<Vec<SelectedTrack
     trackers.set(updated);
 }
 
-fn add_tracker_trace(mut html: String, trackers: Signal<Vec<SelectedTracker>>) -> String {
+fn add_tracker_trace(mut html: String, trackers: Signal<Vec<SelectedTracker>>, update_center: bool) -> String {
     let trackers_data = trackers.read();
+    let mut all_coordinates:Vec<Coordinate> = vec![];
 
     for (index, tracker) in trackers_data.iter().enumerate() {
         if tracker.tracker_id != DEFAULT_SELECTOR {
@@ -87,6 +93,7 @@ fn add_tracker_trace(mut html: String, trackers: Signal<Vec<SelectedTracker>>) -
                     lat: (coord.lat as f32) / 1000000.0,
                     lon: (coord.lon as f32) / 1000000.0,
                 };
+                all_coordinates.push(coordinate.clone());
                 let point = (coordinate.lat, coordinate.lon, tracker.tracker_id.as_str());
                 coordinates.push(point);
             }
@@ -121,5 +128,15 @@ fn add_tracker_trace(mut html: String, trackers: Signal<Vec<SelectedTracker>>) -
             }
         }
     }
+    if update_center {
+        let map_state = use_context::<Signal<MapDisplayState>>();
+        let mid = average_geographic_position(all_coordinates);
+        let latitude = mid.lat;
+        let longitude = mid.lon;
+        html = html.replace("<!--ZOOM_LEVEL-->", map_state.read().zoom.to_string().as_str());
+        html = html.replace("<!--START_LAT-->", &latitude.to_string());
+        html = html.replace("<!--START_LON-->", &longitude.to_string());
+    }
+
     html
 }

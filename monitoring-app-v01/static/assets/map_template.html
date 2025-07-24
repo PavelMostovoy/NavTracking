@@ -168,18 +168,6 @@
             value: map.getZoom().toString()
         }, "*");
 
-
-        const sampleData = [
-            {lat: 42.684734, lng: 3.034418, time: 1502529980, dir: 320, info: [{key: 'name', value: 'ship1'}]},
-            {lat: 42.685734, lng: 3.035418, time: 1502531980, dir: 330, info: [{key: 'name', value: 'ship1'}]},
-            {lat: 42.686734, lng: 3.036418, time: 1502532980, dir: 340, info: [{key: 'name', value: 'ship1'}]}
-        ];
-
-        const trackplayback = L.trackplayback(sampleData, map);
-        const trackplaybackControl = L.trackplaybackcontrol(trackplayback);
-        trackplaybackControl.addTo(map);
-
-
         // Update parent on map movement
         map.on('moveend zoomend', function () {
             const zoom = map.getZoom();
@@ -193,6 +181,9 @@
                 }
             }, "*");
         });
+
+        // Add Playback controls
+        <!--TRACKERS-PLAYBACK-->
 
         // Add markers
         <!--BLUE_MARKERS-->
