@@ -3,6 +3,7 @@ use serde_json::Value;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
 pub struct UplinkPayload {
     #[serde(rename = "deduplicationId", default)]
     deduplication_id: Option<String>,
@@ -40,6 +41,7 @@ pub struct UplinkPayload {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct DeviceInfo {
     #[serde(rename = "tenantId", default)]
     tenant_id: Option<String>,
@@ -73,6 +75,7 @@ pub struct DeviceInfo {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct RxInfo {
     #[serde(rename = "gatewayId", default)]
     gateway_id: Option<String>,
@@ -106,6 +109,7 @@ pub struct RxInfo {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct Metadata {
     #[serde(default)]
     region_config_id: Option<String>,
@@ -115,6 +119,7 @@ pub struct Metadata {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct TxInfo {
     #[serde(default)]
     frequency: Option<u64>,
@@ -124,12 +129,14 @@ pub struct TxInfo {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct Modulation {
     #[serde(default)]
     lora: Option<Lora>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct Lora {
     #[serde(default)]
     bandwidth: Option<u32>,

@@ -1,0 +1,21 @@
+[Unit]
+Description=Rust Axum API server
+After=network.target
+
+[Service]
+User=nginxadmin
+Group=nginxadmin
+WorkingDirectory=/home/nginxadmin/NavTracking/api_server/target/release
+ExecStart=/home/nginxadmin/NavTracking/api_server/target/release/api-server
+Restart=always
+RestartSec=3
+
+Environment="RUST_LOG=info"
+Environment="MONGODB_URI=mongodb://localhost:27017"
+Environment="PORT=3311"
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

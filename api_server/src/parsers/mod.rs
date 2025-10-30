@@ -7,6 +7,7 @@ fn bytes_to_u32(bytes: &[u8]) -> u32 {
     u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]])
 }
 
+#[allow(dead_code)]
 fn decode_unix_timestamp(timestamp: u32) -> String {
     let datetime = DateTime::from_timestamp(timestamp as i64, 0)
         .unwrap_or(DateTime::from_timestamp(0, 0).unwrap());
@@ -35,8 +36,8 @@ pub fn string_to_data(value: String) -> GeoData {
 
     GeoData {
         time: timestamp,
-        latitude: lat,
-        longitude: lon,
+        latitude: lat as f64,
+        longitude: lon as f64,
     }
 }
 
