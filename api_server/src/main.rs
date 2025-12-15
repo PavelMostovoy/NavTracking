@@ -10,7 +10,7 @@ use mongodb::bson::doc;
 use mongodb::{Client, Database};
 use tokio::net::TcpListener;
 use std::net::SocketAddr;
-use crate::database::{DB_URL, DB_USER};
+use crate::database::{DB_URL, DB_USER, ensure_timestamp_index_for_all_collections};
 use crate::web::routes_handlers::{handle_uplink, last_positions};
 use log::{ info};
 use env_logger;
@@ -58,6 +58,14 @@ async fn main() {
         .await
         .unwrap();
     info!("Pinged your database. Successfully connected to MongoDB!");
+
+    // Ensure timestamp index exists for all existing collections on startup
+    let navigation_db = client.database("navigation");
+    if let Err(e) = ensure_timestamp_index_for_all_collections(&navigation_db).await {
+        info!("Index ensuring failed for some collections: {}", e);
+    } else {
+        info!("Ensured 'timestamp' index for all existing collections");
+    }
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3311));
 

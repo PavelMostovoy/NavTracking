@@ -1,4 +1,4 @@
-use crate::database::{GeoPoint, SimplifiedData, TrackerGeoData};
+use crate::database::{GeoPoint, SimplifiedData, TrackerGeoData, ensure_timestamp_index};
 use crate::lora_data::payload::UplinkPayload;
 use crate::parsers::{string_to_data, string_to_timestamp};
 use axum::Json;
@@ -48,6 +48,8 @@ pub async fn handle_uplink(
             position: GeoPoint::new(received_data.latitude, received_data.longitude),
         };
         let collection = db.collection::<TrackerGeoData>(payload.device_info.dev_eui.as_str());
+        // Ensure index on timestamp for this (possibly new) collection
+        let _ = ensure_timestamp_index(&collection).await;
 
         let existing_timestamp = collection
             .find_one(doc! {"timestamp": BsonDateTime::from_millis(data_to_send.timestamp.timestamp_millis())})
