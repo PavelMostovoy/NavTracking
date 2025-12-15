@@ -50,7 +50,6 @@ pub fn date_to_unix_range(date: NaiveDate) -> Option<(i64, i64)> {
     Some((start_timestamp, end_timestamp))
 }
 
-
 pub async fn send_tracker_request(
     tracker_payload: TrackerPayload,
 ) -> Result<TrackerResponse, reqwest::Error> {
@@ -66,6 +65,7 @@ pub async fn send_tracker_request(
     let tracker_data = res.json::<TrackerResponse>().await?;
     Ok(tracker_data)
 }
+
 pub async fn send_tracker_request_actual(
     tracker_payload: TrackerPayload,
     amount: i64

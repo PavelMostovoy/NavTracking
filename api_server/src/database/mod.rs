@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
 pub const DB_URL: &str = "cluster0.8xcdaom.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 pub const DB_USER: &str = "db_user_temp";
@@ -25,12 +26,17 @@ impl GeoPoint {
 #[derive(Debug, Serialize,Deserialize)]
 pub(crate) struct TrackerGeoData{
     pub(crate) name:String,
-    pub(crate) timestamp:u32,
     pub(crate) position:GeoPoint,
+    // Store as BSON DateTime; serialize as Extended JSON { "$date": ... }
+    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
+    pub(crate) timestamp:DateTime<Utc>,
+
 }
 
 #[derive(Debug, Serialize,Deserialize)]
 pub(crate) struct SimplifiedData{
     pub(crate) position: GeoPoint,
-    pub(crate) time: u32,
+    // Keep Rust-side as chrono, serialize as Extended JSON { "$date": ... }
+    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
+    pub(crate) time: DateTime<Utc>,
 }

@@ -6,9 +6,10 @@ use axum::extract::{State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Result};
 use axum_auth::{ AuthBearer};
+use chrono::TimeZone;
 use futures::stream::TryStreamExt as _;
-use log::info;
-use mongodb::bson::doc;
+use log::{info};
+use mongodb::bson::{doc, DateTime as BsonDateTime};
 use mongodb::{Collection, Database, bson};
 use serde::{Deserialize};
 use serde_json::{Value, json};
@@ -38,22 +39,25 @@ pub async fn handle_uplink(
     // Time delay verification is 60 seconds, to not receive incorrect data
     // Time between mentioned in JSON and data from the device
     if (time_received - received_data.time) < 60 {
+        let datetime = chrono::Utc
+            .timestamp_opt(received_data.time as i64, 0)
+            .unwrap();
         let data_to_send = TrackerGeoData {
             name: payload.device_info.device_name,
-            timestamp: received_data.time,
+            timestamp: datetime,
             position: GeoPoint::new(received_data.latitude, received_data.longitude),
         };
         let collection = db.collection::<TrackerGeoData>(payload.device_info.dev_eui.as_str());
 
         let existing_timestamp = collection
-            .find_one(doc! {"timestamp": data_to_send.timestamp})
+            .find_one(doc! {"timestamp": BsonDateTime::from_millis(data_to_send.timestamp.timestamp_millis())})
             .await;
         match existing_timestamp {
             Ok(Some(..)) => {
                 // println!("Duplicate found for {}", data_to_send.timestamp);
                 let _ = collection
                     .find_one_and_update(
-                        doc! {"timestamp": data_to_send.timestamp},
+                        doc! {"timestamp": BsonDateTime::from_millis(data_to_send.timestamp.timestamp_millis())},
                         doc! { "$set": bson::to_document(&data_to_send).unwrap() },
                     )
                     .await;
@@ -126,6 +130,7 @@ pub async fn last_positions(
             "data": tracker_data
         }
     });
+
 
     Ok((StatusCode::OK, Json(body)))
 }

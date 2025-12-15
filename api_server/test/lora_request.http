@@ -22,4 +22,16 @@ Content-Type: application/json
   "tail": 1
 }
 
+###
+
+POST http://localhost:3311/last_positions
+Content-Type: application/json
+
+{
+  "tracker_id" : "70b3d57ed00653c7",
+  "tracker_name" : "FRA2455",
+  "tail": 1
+}
+
+
 
