@@ -136,3 +136,7 @@ pub async fn last_positions(
 
     Ok((StatusCode::OK, Json(body)))
 }
+
+pub async fn get_version() -> impl IntoResponse {
+    Json(json!({ "version": env!("CARGO_PKG_VERSION") }))
+}

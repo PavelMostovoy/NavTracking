@@ -11,7 +11,7 @@ use mongodb::{Client, Database};
 use tokio::net::TcpListener;
 use std::net::SocketAddr;
 use crate::database::{DB_URL, DB_USER, ensure_timestamp_index_for_all_collections};
-use crate::web::routes_handlers::{handle_uplink, last_positions};
+use crate::web::routes_handlers::{get_version, handle_uplink, last_positions};
 use log::{ info};
 use env_logger;
 
@@ -85,5 +85,6 @@ fn app(client: Client) -> Router {
     Router::new().route("/", get(|| async { "API Endpoint" }))
         .route("/lora", post(handle_uplink)).with_state(db_connector)
         .route("/last_positions", post(last_positions)).with_state(db_connector_1)
+        .route("/version", get(get_version))
 }
 
