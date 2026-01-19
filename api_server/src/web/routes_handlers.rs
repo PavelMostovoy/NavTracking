@@ -6,7 +6,7 @@ use axum::extract::{State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Result};
 use axum_auth::{ AuthBearer};
-use chrono::TimeZone;
+use chrono::{DateTime, TimeZone, Utc};
 use futures::stream::TryStreamExt as _;
 use log::{info};
 use mongodb::bson::{doc, DateTime as BsonDateTime};
@@ -44,7 +44,7 @@ pub async fn handle_uplink(
             .unwrap();
         let data_to_send = TrackerGeoData {
             name: payload.device_info.device_name,
-            timestamp: datetime,
+            timestamp: bson::datetime::DateTime::from_chrono(datetime),
             position: GeoPoint::new(received_data.latitude, received_data.longitude),
         };
         let collection = db.collection::<TrackerGeoData>(payload.device_info.dev_eui.as_str());
@@ -113,7 +113,8 @@ pub async fn last_positions(
 
     let mut tracker_data = Vec::new();
 
-    while let Some(record) = cursor.try_next().await.map_err(|_| {
+    while let Some(record) = cursor.try_next().await.map_err(|e| {
+        log::error!("Mongo cursor error: {:?}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({ "error": "Failed to parse database response" })),
@@ -122,7 +123,7 @@ pub async fn last_positions(
         info!("{:?}", record);
         tracker_data.push(SimplifiedData {
             position: record.position,
-            time: record.timestamp,
+            time: DateTime::<Utc>::from(record.timestamp),
         });
     }
 

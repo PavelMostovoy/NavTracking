@@ -5,6 +5,7 @@ use mongodb::bson::doc;
 use mongodb::{Collection, Database};
 use mongodb::options::IndexOptions;
 use mongodb::IndexModel;
+use mongodb::bson::DateTime as BsonDateTime;
 pub const DB_URL: &str = "cluster0.8xcdaom.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 pub const DB_USER: &str = "db_user_temp";
@@ -32,17 +33,13 @@ impl GeoPoint {
 pub(crate) struct TrackerGeoData{
     pub(crate) name:String,
     pub(crate) position:GeoPoint,
-    // Store as BSON DateTime; serialize as Extended JSON { "$date": ... }
-    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
-    pub(crate) timestamp:DateTime<Utc>,
+    pub(crate) timestamp:BsonDateTime,
 
 }
 
 #[derive(Debug, Serialize,Deserialize)]
 pub(crate) struct SimplifiedData{
     pub(crate) position: GeoPoint,
-    // Keep Rust-side as chrono, serialize as Extended JSON { "$date": ... }
-    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     pub(crate) time: DateTime<Utc>,
 }
 

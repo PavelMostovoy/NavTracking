@@ -3,10 +3,10 @@ Authorization: Bearer ZFj6GzdbLoLT3v2shaVq5iroGViEHglsx3pjXCc2eDbIgOib6sZrwF0q8i
 Content-Type: application/json
 
 {
-  "time": "2025-10-30T10:08:30Z",
+  "time": "2025-10-30T10:08:31.234567Z",
   "deviceInfo": {
     "deviceName": "test_tracker",
-    "devEui": "A84041FFFF0ABCDE"
+    "devEui": "A84041FFFF0ABCDEf"
   },
   "data": "AzkDaVTjOMEbZP4/"
 }
