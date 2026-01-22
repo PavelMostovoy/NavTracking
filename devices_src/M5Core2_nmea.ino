@@ -132,7 +132,6 @@ void setup() {
   Serial.begin(115200);
 
 
-
   GNSS.begin(GNSS_BAUD, SERIAL_8N1, GNSS_RX, GNSS_TX);
   delay(300);
 
@@ -142,24 +141,35 @@ void setup() {
 // === фильтрация NMEA (раскомментировать нужное) ===
   GNSS.write(UBX_DISABLE_GSV, sizeof(UBX_DISABLE_GSV));
   GNSS.write(UBX_DISABLE_GSA, sizeof(UBX_DISABLE_GSA));
-//   GNSS.write(UBX_DISABLE_VTG, sizeof(UBX_DISABLE_VTG));
+  GNSS.write(UBX_DISABLE_VTG, sizeof(UBX_DISABLE_VTG));
   GNSS.write(UBX_DISABLE_TXT, sizeof(UBX_DISABLE_TXT));
+  GNSS.write(UBX_DISABLE_GLL, sizeof(UBX_DISABLE_GLL));
 
 
   M5.Rtc.begin();
 
-  if (!SD.begin()) {
-    Serial.println("SD init failed - logging disabled");
-  } else {
-    createLogFile();
-    logFile = SD.open(fileName, FILE_APPEND);
-    if (!logFile) {
-      Serial.println("File open error");
+  M5.Lcd.fillScreen(RED);
+  while (true) {
+    if (SD.begin(4)) {
+      createLogFile();
+      logFile = SD.open(fileName, FILE_APPEND);
+      if (logFile) {
+        Serial.print("Logging NMEA to: ");
+        Serial.println(fileName);
+        M5.Lcd.fillScreen(GREEN);
+        delay(1000);
+        break;
+      } else {
+        Serial.println("File open error, retrying...");
+      }
     } else {
-      Serial.print("Logging NMEA to: ");
-      Serial.println(fileName);
+      Serial.println("SD init failed, retrying...");
     }
+    delay(500);
   }
+
+  // M5.Axp.SetLcdVoltage(2500);
+  M5.Axp.SetDCDC3(false);
 }
 
 /* ================================================= */
@@ -224,13 +234,13 @@ bool isNMEAMessageValid(const char* line) {
       if (status[0] != 'A') return false;
       if (mode[0] == 'N' || mode[0] == '\0') return false;
     } else return false;
-  } 
+  }
   else if (strstr(line, "RMC")) {
     char status[2];
     if (getField(line, 2, status, 2)) {
       if (status[0] != 'A') return false;
     } else return false;
-  } 
+  }
   else if (strstr(line, "GGA")) {
     char quality[2];
     if (getField(line, 6, quality, 2)) {
@@ -369,8 +379,16 @@ void createLogFile() {
   RTC_DateTypeDef date;
   M5.Rtc.GetDate(&date);
 
-  sprintf(fileName, "/%04d-%02d-%02d.log",
-          date.Year,
-          date.Month,
-          date.Date);
+  // If RTC year is very old (e.g. 2000), it's likely not synced yet.
+  if (date.Year < 2026) {
+    sprintf(fileName, "/gps_wait.log");
+  } else {
+    sprintf(fileName, "/%04d-%02d-%02d.log",
+            date.Year,
+            date.Month,
+            date.Date);
+  }
 }
+
+
+// M5Core2 version 0.2 M5Unified vesion 0.2.11
