@@ -137,32 +137,29 @@ void setup() {
   delay(300);
 
   // === при необходимости раскомментировать ===
-  // GNSS.write(UBX_RATE_10HZ, sizeof(UBX_RATE_10HZ));
+  GNSS.write(UBX_RATE_10HZ, sizeof(UBX_RATE_10HZ));
   // GNSS.write(UBX_RATE_25HZ, sizeof(UBX_RATE_25HZ));
 // === фильтрация NMEA (раскомментировать нужное) ===
   GNSS.write(UBX_DISABLE_GSV, sizeof(UBX_DISABLE_GSV));
-//   GNSS.write(UBX_DISABLE_GSA, sizeof(UBX_DISABLE_GSA));
+  GNSS.write(UBX_DISABLE_GSA, sizeof(UBX_DISABLE_GSA));
 //   GNSS.write(UBX_DISABLE_VTG, sizeof(UBX_DISABLE_VTG));
-//   GNSS.write(UBX_DISABLE_TXT, sizeof(UBX_DISABLE_TXT));
+  GNSS.write(UBX_DISABLE_TXT, sizeof(UBX_DISABLE_TXT));
 
-
-  if (!SD.begin()) {
-    Serial.println("SD init failed");
-    while (1);
-  }
 
   M5.Rtc.begin();
 
-  createLogFile();
-
-  logFile = SD.open(fileName, FILE_APPEND);
-  if (!logFile) {
-    Serial.println("File open error");
-    while (1);
+  if (!SD.begin()) {
+    Serial.println("SD init failed - logging disabled");
+  } else {
+    createLogFile();
+    logFile = SD.open(fileName, FILE_APPEND);
+    if (!logFile) {
+      Serial.println("File open error");
+    } else {
+      Serial.print("Logging NMEA to: ");
+      Serial.println(fileName);
+    }
   }
-
-  Serial.print("Logging NMEA to: ");
-  Serial.println(fileName);
 }
 
 /* ================================================= */
@@ -181,6 +178,97 @@ void loop() {
 
 /* ================================================= */
 
+bool getField(const char* line, int fieldIndex, char* buffer, int maxLen) {
+  int currentField = 0;
+  int j = 0;
+  const char* p = line;
+
+  while (*p && *p != '*') {
+    if (*p == ',') {
+      currentField++;
+      p++;
+      if (currentField > fieldIndex) break;
+      continue;
+    }
+    if (currentField == fieldIndex) {
+      if (j < maxLen - 1) buffer[j++] = *p;
+    }
+    p++;
+  }
+  buffer[j] = '\0';
+  return (currentField >= fieldIndex);
+}
+
+uint8_t hexCharToByte(char c) {
+  if (c >= '0' && c <= '9') return c - '0';
+  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  return 0;
+}
+
+bool verifyNMEAChecksum(const char* line) {
+  const char* star = strchr(line, '*');
+  if (!star || star[1] == 0 || star[2] == 0) return false;
+  uint8_t cs = 0;
+  for (const char* p = line + 1; p < star; ++p) cs ^= *p;
+  uint8_t received = (hexCharToByte(star[1]) << 4) | hexCharToByte(star[2]);
+  return cs == received;
+}
+
+bool isNMEAMessageValid(const char* line) {
+  if (!verifyNMEAChecksum(line)) return false;
+
+  if (strstr(line, "GLL")) {
+    char status[2], mode[2];
+    if (getField(line, 6, status, 2) && getField(line, 7, mode, 2)) {
+      if (status[0] != 'A') return false;
+      if (mode[0] == 'N' || mode[0] == '\0') return false;
+    } else return false;
+  } 
+  else if (strstr(line, "RMC")) {
+    char status[2];
+    if (getField(line, 2, status, 2)) {
+      if (status[0] != 'A') return false;
+    } else return false;
+  } 
+  else if (strstr(line, "GGA")) {
+    char quality[2];
+    if (getField(line, 6, quality, 2)) {
+      if (quality[0] == '0' || quality[0] == '\0') return false;
+    } else return false;
+  }
+  else if (strstr(line, "GSA")) {
+    char fixType[2];
+    if (getField(line, 2, fixType, 2)) {
+      if (fixType[0] == '1' || fixType[0] == '\0') return false;
+    } else return false;
+  }
+  else if (strstr(line, "VTG")) {
+    char mode[2];
+    if (getField(line, 9, mode, 2)) {
+      if (mode[0] == 'N' || mode[0] == '\0') return false;
+    } else return false;
+  }
+
+  return true;
+}
+
+void updateLogFileName() {
+  char oldName[32];
+  strncpy(oldName, fileName, sizeof(oldName));
+  createLogFile();
+  if (strcmp(oldName, fileName) != 0) {
+    if (logFile) {
+      logFile.close();
+    }
+    logFile = SD.open(fileName, FILE_APPEND);
+    if (logFile) {
+      Serial.print("Switched to new log file: ");
+      Serial.println(fileName);
+    }
+  }
+}
+
 void processNMEAChar(char c) {
   if (c == '\n') {
     nmeaLine[nmeaIndex] = 0;
@@ -194,16 +282,23 @@ void processNMEAChar(char c) {
 /* ================================================= */
 
 void handleNMEALine(const char* line) {
-  logLine(line);
+  if (!isNMEAMessageValid(line)) return;
 
   if (!rtcSynced && strstr(line, "RMC")) {
     trySyncRTCfromRMC(line);
+    if (rtcSynced) {
+      updateLogFileName();
+    }
   }
+
+  logLine(line);
 }
 
 /* ================================================= */
 
 void logLine(const char* line) {
+  if (!logFile) return;
+
   uint16_t len = strlen(line);
 
   if (bufferIndex + len + 2 >= BUFFER_SIZE) {
@@ -221,8 +316,14 @@ void logLine(const char* line) {
 void flushBuffer() {
   if (bufferIndex == 0) return;
 
-  logFile.write((uint8_t*)writeBuffer, bufferIndex);
-  logFile.flush();
+  if (!logFile) {
+    logFile = SD.open(fileName, FILE_APPEND);
+  }
+
+  if (logFile) {
+    logFile.write((uint8_t*)writeBuffer, bufferIndex);
+    logFile.flush();
+  }
   bufferIndex = 0;
 }
 
@@ -230,36 +331,19 @@ void flushBuffer() {
 
 void trySyncRTCfromRMC(const char* rmc) {
   // $GNRMC,hhmmss.sss,A,.....,ddmmyy,...
-  char copy[128];
-  strncpy(copy, rmc, sizeof(copy));
+  char timeStr[16], dateStr[16];
+  if (!getField(rmc, 1, timeStr, sizeof(timeStr))) return;
+  if (!getField(rmc, 9, dateStr, sizeof(dateStr))) return;
 
-  char* token;
-  uint8_t field = 0;
+  if (strlen(timeStr) < 6 || strlen(dateStr) < 6) return;
 
-  int hh, mm, ss, dd, MM, yy;
+  int hh = (timeStr[0] - '0') * 10 + (timeStr[1] - '0');
+  int mm = (timeStr[2] - '0') * 10 + (timeStr[3] - '0');
+  int ss = (timeStr[4] - '0') * 10 + (timeStr[5] - '0');
 
-  token = strtok(copy, ",");
-
-  while (token) {
-    field++;
-
-    if (field == 2) { // time
-      if (strlen(token) < 6) return;
-      hh = (token[0]-'0')*10 + (token[1]-'0');
-      mm = (token[2]-'0')*10 + (token[3]-'0');
-      ss = (token[4]-'0')*10 + (token[5]-'0');
-    }
-
-    if (field == 10) { // date
-      if (strlen(token) != 6) return;
-      dd = (token[0]-'0')*10 + (token[1]-'0');
-      MM = (token[2]-'0')*10 + (token[3]-'0');
-      yy = (token[4]-'0')*10 + (token[5]-'0') + 2000;
-      break;
-    }
-
-    token = strtok(NULL, ",");
-  }
+  int dd = (dateStr[0] - '0') * 10 + (dateStr[1] - '0');
+  int MM = (dateStr[2] - '0') * 10 + (dateStr[3] - '0');
+  int yy = (dateStr[4] - '0') * 10 + (dateStr[5] - '0') + 2000;
 
   RTC_DateTypeDef date;
   RTC_TimeTypeDef time;
@@ -276,7 +360,6 @@ void trySyncRTCfromRMC(const char* rmc) {
   M5.Rtc.SetTime(&time);
 
   rtcSynced = true;
-
   Serial.println("RTC synced from RMC");
 }
 
